@@ -368,6 +368,227 @@ With 3 developers:
 
 ---
 
+## Fast Track: 5-Day Solo Sprint 🏃
+
+**Goal**: Deliver working MVP in 5 days by deferring US4 (Parameter Store) and minimizing polish tasks
+
+**Strategy**: Use `.env` file for API keys temporarily, add Parameter Store security in Day 6-7 later
+
+### Day 1: Foundation + Google Civic (T001-T022)
+
+**Morning Session** (4 hours):
+- ✅ T001-T003: Dependencies (15 min - batch install)
+- ✅ T004-T009: Foundational models (3 hours - use Copilot for boilerplate)
+  - Batch create: ErrorResponse, Division, Representative, Office models
+  - Use existing backend/src/models/base.py patterns
+
+**Afternoon Session** (4 hours):
+- ✅ T010-T015: US1 tests (2 hours - write ALL tests at once, see them fail)
+- ✅ T016-T022: US1 implementation (2 hours)
+  - Skip Parameter Store - use `os.getenv("GOOGLE_CIVIC_API_KEY")`
+  - Focus on GoogleCivicClient core logic
+
+**Checkpoint**: Can call Google Civic API and get OCD-IDs
+
+### Day 2: OpenStates Integration (T023-T041)
+
+**Morning Session** (4 hours):
+- ✅ T023-T031: US2 tests (2 hours - batch write ALL tests, verify failures)
+- ✅ T032-T037: OpenStates client (2 hours)
+  - Skip Parameter Store - use `os.getenv("OPENSTATES_API_KEY")`
+
+**Afternoon Session** (4 hours):
+- ✅ T038-T041: OCD parser + logging/tracing (2 hours)
+- **Manual Test**: Verify OpenStates returns representatives for hardcoded OCD-IDs (1 hour)
+- **Buffer**: Debug issues, refine tests (1 hour)
+
+**Checkpoint**: Can convert OCD-IDs to representative data
+
+### Day 3: API Endpoint Part 1 (T042-T055)
+
+**Morning Session** (4 hours):
+- ✅ T042-T052: US3 tests (3 hours - write all validation + handler tests)
+  - Use pytest fixtures for mocking external APIs
+  - Batch create test scenarios
+
+**Afternoon Session** (4 hours):
+- ✅ T053-T055: Request/Response models + validation (2 hours)
+- **Manual Test**: Run pytest suite, verify all tests fail appropriately (30 min)
+- **Buffer**: Fix test setup issues (1.5 hours)
+
+**Checkpoint**: All US3 tests written and failing (Red phase)
+
+### Day 4: API Endpoint Part 2 (T056-T067)
+
+**Full Day** (8 hours):
+- ✅ T056-T062: Core API handler implementation (4 hours)
+  - Route handler
+  - Parameter validation
+  - Integration with GoogleCivicClient + OpenStatesClient
+  - Aggregation + deduplication
+  - Government level categorization
+  - Partial results + warnings
+
+- ✅ T063-T067: Error handling + metadata + tracing (2 hours)
+
+- **Manual Test**: Run pytest suite, all tests should pass (Green phase) (1 hour)
+
+- **Refactor**: Clean up code while keeping tests green (1 hour)
+
+**Checkpoint**: Full API endpoint working, all tests passing
+
+### Day 5: Polish + Deploy (Selected Tasks)
+
+**Morning Session** (3 hours):
+- ✅ T083: Run test coverage, verify >80% (30 min)
+- ✅ T084: Run pylint, fix errors/warnings (1 hour)
+- ✅ T085: Run black formatter (15 min)
+- ✅ T080: Add CORS to API Gateway (30 min)
+- **Create**: `.env.example` file with key placeholders (15 min)
+
+**Afternoon Session** (3 hours):
+- ✅ T087: Deploy with `cdk deploy` (30 min)
+- ✅ T088: Manual testing with 5 real addresses (1 hour)
+  - Test: 1600 Pennsylvania Ave (DC)
+  - Test: California address
+  - Test: Rural address
+  - Test: Invalid address
+  - Test: Partial results address
+- **Document**: Quick API usage guide with curl examples (1 hour)
+- **Buffer**: Fix deployment issues (30 min)
+
+**Checkpoint**: MVP deployed and validated with real addresses
+
+### Deferred to Days 6-7 (Optional Production Hardening)
+
+**Day 6**: Security (T068-T079)
+- Add Parameter Store parameters to CDK
+- Migrate from `.env` to Parameter Store
+- Add IAM permissions
+- Update client initialization
+- Deploy and validate
+
+**Day 7**: Documentation (T081-T082, T089-T090)
+- Update research docs
+- Write comprehensive API usage guide
+- Validate CloudWatch logs
+- Validate X-Ray traces
+
+---
+
+## Fast Track Optimizations
+
+### 1. Batch Model Creation (T006-T009)
+
+Instead of creating models sequentially, use Copilot to generate all 4 at once:
+
+```python
+# File: backend/src/models/base.py
+# Prompt: "Create ErrorResponse, Division, Representative, Office models based on specs/003-address-lookup/data-model.md"
+
+# Copilot generates all models in one session (~30 min vs 2 hours)
+```
+
+### 2. Temporary Key Management
+
+Create `backend/.env` (NOT committed):
+```bash
+GOOGLE_CIVIC_API_KEY=your_google_key_here
+OPENSTATES_API_KEY=your_openstates_key_here
+```
+
+Update clients:
+```python
+# backend/src/services/google_civic.py
+import os
+
+class GoogleCivicClient:
+    def __init__(self):
+        self.api_key = os.getenv("GOOGLE_CIVIC_API_KEY")
+        if not self.api_key:
+            raise ValueError("GOOGLE_CIVIC_API_KEY not set")
+```
+
+**Security Note**: Add `.env` to `.gitignore` immediately
+
+### 3. Consolidated Testing
+
+Write parameterized tests instead of separate test functions:
+
+```python
+# Instead of T012, T013, T014 as separate functions:
+@pytest.mark.parametrize("address,expected_status", [
+    ("1600 Pennsylvania Ave NW, DC 20500", 200),
+    ("invalid address", 404),
+    (None, 429),  # simulate rate limit
+])
+def test_google_civic_lookup(address, expected_status):
+    # Single test covers multiple scenarios
+    pass
+```
+
+### 4. Skip Non-Critical Validation
+
+**Skip** (saves ~2 hours):
+- T089: CloudWatch log format validation (spot check instead)
+- T090: X-Ray trace validation (spot check instead)
+- T081: Research doc updates (not user-facing)
+
+**Keep** (quality gates):
+- T083: Test coverage >80%
+- T084: Pylint checks
+- T085: Black formatting
+
+### 5. Parallel Manual Testing
+
+On Day 5, test multiple addresses in parallel using shell:
+
+```bash
+# Test all 5 addresses concurrently
+for addr in "1600+Pennsylvania+Ave+NW,+DC+20500" \
+            "123+Main+St,+Sacramento,+CA+95814" \
+            "invalid+address" \
+            "456+Rural+Rd,+Montana" \
+            "partial+results+test"; do
+  curl "${API_ENDPOINT}/representatives?address=${addr}" | jq . &
+done
+wait
+```
+
+---
+
+## Fast Track Task Checklist
+
+Copy this to track your 5-day sprint:
+
+**Day 1** (Foundation + US1):
+- [ ] T001-T003: Dependencies
+- [ ] T004-T009: Models (batch)
+- [ ] T010-T015: US1 tests
+- [ ] T016-T022: US1 implementation (use .env)
+
+**Day 2** (US2):
+- [ ] T023-T031: US2 tests
+- [ ] T032-T041: US2 implementation (use .env)
+
+**Day 3** (US3 Tests):
+- [ ] T042-T052: US3 tests
+- [ ] T053-T055: Request/Response models
+
+**Day 4** (US3 Implementation):
+- [ ] T056-T067: API handler + integration
+
+**Day 5** (Polish + Deploy):
+- [ ] T080: CORS
+- [ ] T083-T085: Quality gates
+- [ ] T087-T088: Deploy + manual test
+
+**Days 6-7** (Optional):
+- [ ] T068-T079: Add Parameter Store security
+- [ ] T081-T082: Documentation
+
+---
+
 ## Task Count Summary
 
 - **Phase 1 (Setup)**: 3 tasks
