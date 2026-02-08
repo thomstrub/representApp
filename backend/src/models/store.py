@@ -23,14 +23,15 @@ class RepresentativeStore:
     def create(self, representative: Representative) -> Response:
         """Create a new representative"""
         response = Response()
-        item = representative.dict()
+        # Use model_dump with mode='json' to get proper ISO datetime strings
+        item = representative.model_dump(mode='json')
         
         try:
             self.table.put_item(
                 Item=item,
                 ConditionExpression=Attr('id').not_exists()
             )
-            response.body.data = [representative.dict()]
+            response.body.data = [item]
         except ClientError as e:
             self.logger.error(f"Error creating representative: {e}")
             response.add_boto_error(e)
@@ -46,7 +47,7 @@ class RepresentativeStore:
             item = result.get('Item')
             
             if item:
-                response.body.data = [Representative(**item).dict()]
+                response.body.data = [Representative(**item).model_dump(mode='json')]
             else:
                 error = APIError(
                     status=404,
@@ -76,7 +77,7 @@ class RepresentativeStore:
                 )
                 items.extend(result.get('Items', []))
             
-            representatives = [Representative(**item).dict() for item in items]
+            representatives = [Representative(**item).model_dump(mode='json') for item in items]
             response.body.data = representatives
             
         except ClientError as e:
@@ -88,14 +89,15 @@ class RepresentativeStore:
     def update(self, representative: Representative) -> Response:
         """Update an existing representative"""
         response = Response()
-        item = representative.dict()
+        # Use model_dump with mode='json' to get proper ISO datetime strings
+        item = representative.model_dump(mode='json')
         
         try:
             self.table.put_item(
                 Item=item,
                 ConditionExpression=Attr("id").eq(representative.id)
             )
-            response.body.data = [representative.dict()]
+            response.body.data = [item]
         except ClientError as e:
             self.logger.error(f"Error updating representative: {e}")
             response.add_boto_error(e)
@@ -115,7 +117,7 @@ class RepresentativeStore:
             
             attr = result.get("Attributes")
             if attr:
-                response.body.data = [Representative(**attr).dict()]
+                response.body.data = [Representative(**attr).model_dump(mode='json')]
             
         except ClientError as e:
             self.logger.error(f"Error deleting representative: {e}")

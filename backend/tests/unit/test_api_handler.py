@@ -4,7 +4,7 @@ Unit tests for API handler
 import json
 import pytest
 import os
-from moto import mock_dynamodb
+from moto import mock_aws
 import boto3
 
 
@@ -19,7 +19,7 @@ from handlers.api import handler
 from models.domain import Representative
 
 
-@mock_dynamodb
+@mock_aws
 def test_create_representative():
     """Test creating a representative"""
     # Setup mock DynamoDB
@@ -68,7 +68,7 @@ def test_create_representative():
     assert body['data'][0]['state'] == 'CA'
 
 
-@mock_dynamodb
+@mock_aws
 def test_list_representatives():
     """Test listing all representatives"""
     # Setup mock DynamoDB
@@ -108,7 +108,7 @@ def test_list_representatives():
     assert isinstance(body['data'], list)
 
 
-@mock_dynamodb
+@mock_aws
 def test_get_nonexistent_representative():
     """Test getting a representative that doesn't exist"""
     # Setup mock DynamoDB

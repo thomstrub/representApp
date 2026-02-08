@@ -44,6 +44,6 @@ class Response(BaseModel):
 
     def dump(self) -> Dict:
         """Return properly formatted response for Lambda"""
-        result = self.dict(exclude={'body'})
-        result['body'] = self.body.json() if self.body else ''
+        result = self.model_dump(exclude={'body'})
+        result['body'] = self.body.model_dump_json() if self.body else ''
         return result
