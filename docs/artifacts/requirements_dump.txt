@@ -1,0 +1,25 @@
+The overallgoal of this project, not necessarily this repo, is to help bridge the gap between polictical infastructure and day to day lives of constituents. 
+
+Some ideas for achieving this goal:
+- to explore in this repo:
+MVP ideas:
+  - a webapp that allows users to easily find and contact their representatives
+  - a backend system that aggregates and analyzes political data
+  - infrastructure as code to deploy and manage the application
+  - because political constituentancy is location based, use location to help users find their representatives and issues that may pertain to them
+  - because data sources and structures may vary state to state or country by county, leverage the new multi-tenancy features
+  - a testing framework to ensure reliability and correctness of the application
+POST-MVP ideas:
+  - a map based interface to visualize political data
+  - map based zooming the integrates political boundaries with location data
+- to explore outside this repo:
+  - tbd
+
+Notes:
+  - As a user, I want to be able to know who my local, state, and federal representatives are, what they stand for, and how to contact them easily.
+  - As a user , I want to be able to see how my representatives have voted on issues that matter to me.
+  - As a user, I want to be able to easily digest political information without having to sift through dense legal language.
+  - As a user, I ultimately want the same knowledge and access with my representatives that a lobbyist has.
+  - As a developer, I want to be able to easily deploy and manage the application infrastructure using code.
+  - As a developer, my first priority is a backend that provides information based on location- perhaps zip code.
+  - As a developer, I want some type of frontend interface to interact with the backend- perhaps a simple webapp. This will hopefully evolve into an interactive map based interface.

@@ -1,0 +1,1087 @@
+ All right, thank you so much for coming. Okay, now I can see that you can hear us.
+0:05
+All right, so today's sessions, we're gonna talk about this new thing
+0:10
+that we recently launched, right? But we're not gonna be talking about just the feature. We're gonna be talking about the overall use case,
+0:16
+which is building secure, multi-tenant SaaS applications with Lambda. And we'll do isolation into how you achieve tenant isolation
+0:25
+in your SaaS applications. So we'll cover the problem, right?
+0:31
+Then we'll cover existing solutions, and then we'll talk about new solutions, okay? I'm Anton, I'm a principal solutions architect
+0:38
+for serverless. This is Bill, right? Pretty much my peer, right? We're both very excited about serverless and SaaS.
+0:46
+And at this point in time, you're probably wondering who's that third guy, Joe, right?
+0:51
+So, well, meet Joe, right? He's your average Joe, right?
+0:57
+This is where our story begins. Now, Joe lives his quiet life
+1:02
+in a single-family house somewhere in a suburbs, right?
+1:08
+But deep inside his heart, there's this big dream of, one day, becoming a famous cloud architect, right?
+1:13
+So every night Joe reads books about cloud architecture in his private room, right,
+1:19
+and builds prototypes on AWS. At some point in time, determined to pursue his dream,
+1:25
+he enrolls into a big university in a city, and moves into his new accommodation, right?
+1:32
+He's very determined to meet his roommates. But Joe quickly discovers
+1:37
+that the shared life is not exactly what he imagined, right? So he discovers the problem of noisy neighbors, right?
+1:46
+Essentially not allowing you to focus on what you're trying to do. He also learns what does it mean
+1:53
+when one tenant that you live with, right, occasionally leaves that shared environment
+1:58
+a little bit dirty, right? Also something that you're not particularly enjoying, right?
+2:04
+So, one day, sitting on a bench, he's thinking, "I wish I had some tenant isolation in place, right,
+2:10
+in my shared environment." So this is where Joe discovered the difference between single-tenant and multi-tenant environment, right?
+2:17
+I think you understand the analogy we're trying to say here, right? Private living, shared living, right?
+2:22
+So in a single-tenant environment, also known as dedicated or siloed, right,
+2:27
+every tenant has their own dedicated resources: compute, storage, etc.
+2:34
+So this model provides the highest degree of isolation for these resources, but it can also get quite expensive at scale, right?
+2:43
+You need to maintain those resources per tenant. The more tenants you have, the more resources you need to maintain.
+2:50
+The multi-tenant model, also know as shared or pooled, on the other hand, it helps you overcome these concerns, right?
+2:57
+In this model, cloud resources can be efficiently shared across multiple tenants, right?
+3:05
+For example, requests coming from different tenants might be served by the same compute unit,
+3:11
+the same function, the same container, the same EC2 instance, basically, shared compute.
+3:16
+So, as a result, your costs are lower, right? You know, your operations are simpler,
+3:21
+you don't need to maintain that much infrastructure. That said, this model comes with its own considerations, right?
+3:27
+So now you have multiple tenants reusing resources. You need to maintain some level of isolation
+3:34
+between these tenants, right? Fun problem to tackle. So, you know, Joe graduated,
+3:41
+found his first job as a cloud engineer, right, and, well, guess what? Now his job is to build
+3:48
+multi-tenant cloud applications, right? And this is where Joe discovers
+3:54
+that building multi-tenant SaaS applications can actually get quite tricky.
+4:00
+- Thanks, Anton. So we like Joe, right? Joe's a good guy. We're gonna go to school with Joe. We're gonna learn a little bit
+4:06
+about his experiences building SaaS, what he learned about multi-tenancy. And it started off, he joined a company,
+4:12
+he learned a little bit about what they wanted to do. They had business requirements that they wanted him to fulfill. He couldn't just jump into the tech
+4:18
+and learn about the tech, but he still had technical requirements he had to fulfill as well. Now, for the purpose of talking about Lambda,
+4:26
+talking about serverless, there's a couple of primary challenges from a business perspective what we wanted to achieve,
+4:32
+and from a technical perspective of how we achieve them that I wanna focus on. So, in terms of Joe's journey,
+4:38
+his company wanted to innovate fast. They wanted to introduce new features to their customers rapidly,
+4:44
+keep ahead of the competition, do a good job of continually keeping their application fresh and their customers happy.
+4:51
+Now, to do so, they wanted to have a shared environment, they wanted everything to be completely isolated,
+4:56
+they had customers who demanded that everything be perfect in terms of isolation, and they couldn't deal with noisy neighbor problems.
+5:03
+And all we know by noisy neighbors is, "Hey, if one tenant, or one of our customers,
+5:08
+is doing too much activity, that shouldn't affect any of our other customers." So these are some of the primary challenges
+5:14
+that Joe is faced with. And he's a serverless guy. He loves serverless.
+5:19
+And I'm not gonna read all of these to you, but, of course, serverless and SaaS are a natural fit.
+5:25
+And these are some of the reasons up here. But just in general, if we were to summarize this, the operational efficiency and also the cost efficiency
+5:34
+that you get from serverless are a really great fit. Now, if you think about what serverless even is,
+5:40
+it's a lot like SaaS. It was born in the cloud. There's no on-prem version of serverless out there.
+5:47
+Now, you can take a Lambda, and you can emulate it, and you can do different environments, but this is born in the cloud technology,
+5:52
+it's great, he loves it, and he's embraced all of these principles. And I said that serverless and SaaS a great fit,
+5:59
+and that cost could be one of the reasons. Well, take a look at this, and think a little bit about the serverful environments
+6:05
+that you've worked in. When you're building serverful environments, you might have the ability to scale, of course,
+6:12
+you can scale up and scale down as you need to, you can do this in containers, you can do this with even just core instances.
+6:19
+But, as you do so, you're reactively scaling up to your peak requirements.
+6:24
+"Okay, we have this much potential load during this time. I'm gonna set up as many servers, or as many containers,
+6:31
+as I need to to handle all that traffic." And, of course, you are paying for those spikes, right?
+6:37
+You're paying for that infrastructure that's sitting there while it's idle. So I have customers who spin up
+6:44
+all of the infrastructure they need, and they keep it on all the time. Maybe they're not even as efficient as this chart.
+6:49
+On the other hand, serverless scales with your costs and utilization pretty evenly.
+6:55
+As your usage goes up, as the number of instances you have go up, you don't even have to handle it.
+7:01
+And, of course, the cost of what you're paying for in terms of those is almost in lockstep with the utilization.
+7:07
+So serverless allows you to have the best one of these ratios, right, of cost to usage. And that's a great fit for SaaS,
+7:14
+especially SaaS where we see spiky workloads. How does Lambda even do this?
+7:20
+How does it do these executions so that we have this nice even chart
+7:25
+where the cost and utilization are in lockstep. Let's think a little bit about what Lambda concurrency is.
+7:32
+So we're just gonna show some invocations, and we call these, you know, function invocations. As requests come in,
+7:38
+we handle them. And if one request comes in, you'll see it here, we have it in purple, that means that the environment that we're in,
+7:45
+this is an environment on this line, is now active, and it's serving up a customer request.
+7:51
+And we have a gray in there, and that's gonna be idle. So keep that in mind as we're looking at this chart. This is a pretty simple chart.
+7:57
+We can go through it pretty quick. One request comes in, we handle it in one environment. Another request comes in, what are we gonna do?
+8:03
+Well, we're gonna handle it in that same environment. It's idle right now. So we can go right into that same environment.
+8:08
+As we keep going, maybe we get another request, but now, it comes in at the same time as that second request.
+8:14
+What are we gonna do? Of course, we can spin up another environment. Now, are we spinning up another environment?
+8:20
+Not exactly. Lambda, and the execution engine behind it, is doing it on our behalf.
+8:26
+I didn't make an active choice, and say, "Hey," poke, poke, poke, "can you go spin up a another other environment for me?"
+8:31
+No, that all just happened magically in the background. And, for most of us now,
+8:36
+that seems like a given, right? We can accept that this happens. This was pretty magical when it came out, and it's still very cool in terms of how we think
+8:43
+about all of these executions and the scale that we can run into in SaaS. Let's keep going.
+8:49
+So now, another invocation comes in. This time, our first environment is now free, so we just execute that in our first environment.
+8:56
+Another invocation comes in, and, oh, two at the same time. Well, we have two free environments.
+9:02
+Of course, we can handle those both in that environment. Keep going, what happens if there's three executions? Of course, another environment is spun up.
+9:09
+Now, this seems somewhat obvious, like, "Okay, this is fine. Bill, why are you telling me this?" Well, a couple of things.
+9:15
+One, look at those idle bars. We aren't paying for that consumption, for those execution environments,
+9:20
+even though they're available to us to put additional invocations into. And then two, we didn't have to do anything here.
+9:28
+This all happened now automagically for us. And the automagical part of that is relevant to the conversation for SaaS,
+9:34
+because not only were we lucky enough to have this happen on our behalf, we didn't control what the specific executions went to.
+9:42
+And in a multi-tenant environment, that's important. Now, the biggest secret of SaaS,
+9:48
+I don't think I'm letting any cats out of the bag here, is actually that there are in fact fleets of servers
+9:54
+underneath the hood. If you didn't know this, I'm sorry to disappoint you. It's not in fact serverless,
+9:59
+there's EC2s that live in thousands of EC2s, right? We have whole fleets of EC2s that support our Lambda fleet.
+10:05
+And that's good. The fact that we don't have to know that, that you could go your whole life without understanding that Lambda actually used EC2s,
+10:12
+and that could be a secret to you, is actually a benefit to us. And this is what we wanted to create.
+10:18
+But let's dig under the hood. Let's remove the veil of ignorance for now, and say, "Oh, we actually now wanna understand
+10:23
+what's happening here." Because, again, from an isolation perspective, this is particularly important.
+10:29
+Look inside one of these individual EC2s. It's just a bare metal EC2.
+10:34
+Within the EC2, of course, we have the host OS, which provides a certain level of isolation here.
+10:40
+We got the kernel on top of it, but importantly, we use the Firecracker microVMs on top of them.
+10:45
+And the Firecracker microVMs have strong isolation around each of them. Nothing is being shared across these Firecracker microVMs.
+10:53
+And that means we've already got a layer of isolation that's important for handling any sort of invocations,
+10:59
+multi-tenant or not. Within this, within the microVM, we'll have a guest kernel.
+11:07
+If you're using our runtimes, our managed runtimes, you'll have our runtimes on there as well, and Lambda extensions, if you're using,
+11:13
+also really cool if you haven't. And, on top of that, our function code lives. So all of these different layers provide
+11:20
+multiple layers of isolation, almost like a Russian nesting doll, right? You can actually look all the way through this stack,
+11:26
+and say, "Hey look, this is protected from this. This is protected from this." We've created really strong isolation that, again,
+11:32
+is important to SaaS providers and to any providers really, but especially in a multi-tenant solution.
+11:38
+Let's look at these boundaries a little bit closer. So across functions, we're never sharing the same execution environment
+11:44
+across functions, right? So never ever are we gonna say, "Hey, the same shared execution environment is shared
+11:50
+across multiple Lambdas." And even in the same function, right, where there's full isolation,
+11:56
+and that click will show you, right, so we've got a complete grid, they're never sharing the same execution environment,
+12:02
+and even within the same function, we're never sharing CPU, disk, or memory.
+12:09
+So this gives you a slightly different visualization on this and a different way to think about the problem space that we're in,
+12:15
+and the challenges that Joe might be facing as he's learning about how to be a great Lambda developer
+12:21
+and an architect. Across our different functions, nothing is shared.
+12:27
+Period, end of story. We're not sharing CPU, we're not sharing disk, we're not sharing memory, there's nothing shared across those.
+12:33
+Go back to that, you know, Firecracker visual that we had, all of those layers,
+12:39
+all of that different layers of isolation around that apply here. Now, what about the same function?
+12:45
+The execution environments that belong to the same function? And think about, again, that chart we had with the different execution environments,
+12:52
+and how the different invocations were coming along in there. We actually have a few things that are potentially shared,
+12:58
+and this is one of the problem spaces we're dealing with. Environmental variables, IAM execution roles and permissions,
+13:04
+and code can actually be shared across the environment.
+13:10
+So let's go back to that same chart. We've got the same nine executions we talked about,
+13:15
+all of them in that same purple active role that we looked at. But in a multi-tenant environment,
+13:21
+there's a lot more color in our universe. For SaaS providers, we have to deal with the fact that multiple customers are coming in,
+13:26
+and, at any given time, an invocation in a shared environment. I couldn't tell you until runtime who that's coming from.
+13:34
+And this is important. That first environment there has handled executions from our blue, green, and yellow tenant,
+13:41
+and across our different environments, over time, this will be true. All of our tenants will land randomly
+13:46
+on different environments, and we don't control that. We don't pick which environment
+13:53
+any one of these individual invocations is going to land in. And this is sort of the crux of the problem, right?
+13:59
+And that's not really a problem, but it is something we need to handle to be fair. So let's get into a demo that sort of demonstrates
+14:05
+the principles that we're talking about, because it's one thing to say, "Hey, these things could potentially be shared."
+14:10
+Let's actually look what this means. We've got a simple memoryCounter. Within there, we also have a diskCounter,
+14:16
+and I'll talk about what those mean. All they're really doing, as it's saying, is writing something to memory, writing something to disk.
+14:24
+Now, we've got this overarching counter here. Pretty basic, right?
+14:29
+Our memoryCounter, we're simply printing. It's a memory counter, we're printing it, incrementing it,
+14:35
+and then storing it back to memory. And the same with the disk, right? Read, print, increment, store.
+14:40
+And then we return the value that has those different values in it. Let's look at Joe.
+14:45
+He's learning how to do this, and, of course, he goes into his Lambda runtime environment and creates a little test that proves, in fact,
+14:52
+that the way this works is exactly what he was thinking. So he invokes this very simple test event that he has,
+14:58
+and we can see some of the outputs, right? We can see in the logs, the memoryCounter, the diskCounter,
+15:04
+and a tenantId, which suspiciously is undefined. Perhaps later on we'll discover what happens with this tenantId
+15:10
+as we start to think about the real invocations. Every time this is invoked, the disk and the memory counter increment.
+15:17
+And they just continue to increment regardless of which of our tenants are calling, and Joe's not even paying attention.
+15:22
+Everything's fine, this is great. I can see that this works exactly the way I designed it.
+15:27
+So let's define the concerns that Joe should be thinking about, and what brought him here to re:Invent 2025 this year
+15:33
+to learn about what we've launched. Each of these tenants, as they come in, are invoking the Lambda function that Joe created.
+15:41
+Now, each of these invocations, as they happen, write some things to disk, they write some things to memory,
+15:47
+and Joe is happily running this function. He thinks he's done a great job. And, of course, he's a hard worker. We really like Joe, we want him to succeed.
+15:54
+But, unfortunately, Joe hasn't sealed all of the code properly as he should. And there are best practices you could do even now
+16:02
+to prevent this from happening. Unfortunately, Joe wasn't aware of them. So there's some leftovers
+16:07
+from that blue tenant's invocation, and those stay in the execution environment.
+16:12
+And if you remember the execution environment, and we added the colors, a lot of different tenants were coming into each of those execution environments.
+16:19
+The yellow tenant comes in, same problem. Now, we've got some more leftovers. Maybe they can see the leftovers from the blue tenant.
+16:26
+Maybe our green tenant, as they come in, can now see leftover data from our blue and our yellow tenant.
+16:32
+Now, is this data important? Well, it could be. It could be tenant-specific data. It could reveal information about our other tenants,
+16:40
+or even the existence of other tenants and who they are, all of which can be dangerous to the business that we're in.
+16:47
+So just, you know, kind of quickly, I mean, it sounds kind of crazy, right, that Lambda has this. Is it a problem?
+16:53
+No, it's not, actually. It's a common concern across all architectures. And I think most of you probably realize this.
+17:00
+And if you step back from this being a Lambda, if you're running containers and you write things to disk,
+17:05
+and you're running multiple containers, you have to be careful, or the other containers will start picking up that same data.
+17:11
+And the same with EC2s, right? I mean there may be levels of isolation around them. You have to manage those.
+17:17
+And that's true of almost every compute environment we've come across so far. So I said Joe actually came here to re:Invent 2025.
+17:25
+We get to learn along with Joe. Joe can come back to being our hero. I'm gonna hand it back to Anton, and he's gonna tell us how we turn Joe back
+17:32
+into the hero of our story. - Thank you, Bill. All right, right? So like Bill mentioned, right,
+17:38
+it's a, you know, inherent concern regardless of what compute you use, right? If you're sharing compute units, right,
+17:45
+across multiple tenants, you need to make sure that you're not leaving some leftovers, right?
+17:51
+Doable? Totally doable. Who's responsible? You. Let's see how do we address that, right?
+17:56
+Lambda is actually quite unique in this regard, because Lambda execution environments are short-lived,
+18:01
+so they do not exist for days or weeks, right? We recycle them all the time. So, even if you have some leftovers,
+18:08
+it's not a good thing. Don't misunderstand me, it's a bad thing, right? But it's gonna be recycled after, you know,
+18:14
+some number of minutes, okay? So Lambda actually makes it a little bit less critical while still very important.
+18:20
+Again, do not misinterpret that, right? So let's see what are the existing solutions
+18:26
+to this problem. And yes, existing means there is also a new one, right? I think you're here for the new one.
+18:32
+We're getting there, okay? Now, before I dive into technical parts,
+18:37
+I work with customers, I'm a solution architect, there are customers who are saying, "Ah, not a big deal."
+18:43
+Okay, all of our data of all our tenants is public anyways, so why do we need to worry about that?
+18:50
+I am not buying that, right? Because, even if today you're don't have a use case
+18:56
+for handling that, right, tomorrow, there will be a reason to handle that, and you're kind of going to forget about it, right?
+19:02
+So I highly recommend, you know, you do not ignore that problem in multi-tenant environments.
+19:09
+Another thing I'm hearing is, you're gonna like it, right? "We have a wiki page,
+19:15
+and we've documented all the best practices for handling tenant information," right? Anyone familiar with that, right?
+19:21
+Good intentions are amazing, but not enough, okay? You do not want to solve that problem by providing guidance.
+19:27
+You want to have something much more tangible, right, something that actually works for you more than guidance
+19:33
+that Joe probably missed because there is so much onboarding materials. So let's talk about solutions.
+19:39
+Now, the first solution, it's kind of obvious, this is going back to single-tenant approach, right?
+19:46
+There are some organizations, and usually those are the largest organizations with highest security demands.
+19:53
+They adopt function-per-tenant model. Anyone here using that or heard about that?
+19:59
+Okay, yeah, I see a few hands, right? Now, essentially, each function is single tenant, right?
+20:05
+One function only handles invokes coming from one tenant. Highest degree of isolation, right?
+20:12
+It's, you know, as isolated as it gets, right? But the problem is it comes at a cost, right?
+20:20
+If you have five tenants, not a big deal. What if you have 500, 5,000, 50,000 tenants, right?
+20:27
+So the benefits of this approach is obviously strong isolation, since you have tenant per function, function per tenant,
+20:33
+kind of cost distribution is a little bit easier. You can configure things per tenant, right, observability,
+20:39
+but there are also considerations, right? Things like operational sprawl, right? Yes, those are serverless functions,
+20:46
+and there no infrastructure to maintain, but 50,000 is 50,000, right?
+20:52
+It's a huge number, right? Good luck managing your CDK, Terraform, etc. And that's just one function with 50,000 tenants.
+20:59
+So it gets harder to maintain at scale. Your CI/CD becomes more complex.
+21:04
+You know, you might hit management API limits, right, when you need to update 30,000 functions, right?
+21:11
+Tenant onboarding is slower because you need to provision dedicated resources per tenant.
+21:16
+Duplication, version drift, custom routing layer, there are some considerations if you're using this model.
+21:22
+That's why we recommend it only if you absolutely have to have that level of isolation.
+21:28
+It's not a common model, but yes, it's definitely used by the industry.
+21:34
+A more common model is you do have a multi-tenant function with multiple tenants using that function,
+21:42
+but, within that function, you have some sort of a framework, or SDK, or a layer,
+21:47
+there are different ways to name it, essentially, a piece of code that your organization wrote
+21:53
+that handles that isolation, right? Essentially, it's decoupled from the business logic, right,
+21:59
+and it handles things like, for example, validating incoming tenant, right,
+22:05
+you know, scoping down credentials, logging on a tenant level, etc., etc., etc.
+22:11
+So it's a piece of code implemented by your development organizations that essentially addresses that problem.
+22:18
+This is a very common approach, right? We do see it quite a lot, right?
+22:23
+One of the companies that I work with, and they're using this approach heavily, is CyberArk. They're using Lambda,
+22:29
+they're serverless-first identity provider, right? And they're using Lambda in their multi-tenant SaaS platform
+22:36
+to minimize infrastructure management, enabling clean compute isolation. They've built their custom tenancy framework,
+22:43
+which is amazing. You know, you can find it on the Internet. Oh, by the way, I forgot to mention, the very last slide, we'll have giant QR code
+22:50
+with all the resources you've seen today, including these slides. You'll have these slides in 37 minutes, okay?
+22:56
+So customers are using that approach. It's pretty popular, pretty robust. It has a lot of benefits
+23:02
+like higher resource reuse, lower unit costs, because you don't need to manage
+23:07
+tens of thousands of functions, right? Tenant onboarding much faster. You don't need to create dedicated resources.
+23:12
+It's just a record in a database, right? Operations are simpler, rapid feature rollout, etc.
+23:18
+But, you know, we're architects, right? There's always, it depends and trade offs, right?
+23:24
+There are also considerations. What if I have noisy neighbors, right? If I'm using shared compute, right,
+23:30
+I might have noisy neighbors. I might require additional compute-level isolation.
+23:35
+So I provided isolation in my custom tenancy framework, but what if I want a higher degree of isolation than that,
+23:43
+but I still prefer not to create function per tenant because that's hard to maintain, right? How do I clean off the leftovers?
+23:49
+Who's responsible for that, right? Per-tenant observability. If one function is reused by 10,000 tenants, right,
+23:56
+how do I observe per tenant, right? Etc., etc., etc.
+24:02
+So, during lunchtime, okay, remember Joe,
+24:07
+he's thinking, "It would be great to have maybe a vendor-provided solution for tenant-compute isolation."
+24:16
+So when he got back from lunch late last week, he was extremely excited to learn that Lambda just announced
+24:23
+the new tenant isolation mode, right? Now, to explain what tenant isolation mode,
+24:29
+well, I'll be talking about it for 30 minutes, but I'll explain it in one slide, right? Because it's a picture that worth a thousand words.
+24:36
+You've seen this, okay? Tenants accessing functions. With the new tenant isolation mode,
+24:42
+you pass us some sort of tenant ID, something, we don't care what that is.
+24:48
+I'll talk about this in following slides, but you need to tell us some unique tenant identifier.
+24:54
+What's gonna happen under the hood? Lambda function, a single function,
+24:59
+will create separate execution environments for each tenant, right? So the execution environments are never reused
+25:09
+across different tenants, right? So let's see an example of that.
+25:15
+Demo is the best way to show it. So if you've used Lambda in the last five-ish days, you've probably noticed this,
+25:21
+there's a new property, if you enable tenant isolation, called Tenant ID. So remember the demo?
+25:27
+Let's evolve it. I'm going to specify my Tenant ID, let's say BlueTenant, okay?
+25:34
+And let's invoke the function. So you're seeing that, first of all, tenantId is now not undefined.
+25:40
+And you can see that the counters are incrementing, because BlueTenant is hitting execution environments
+25:47
+owned by the blue tenant, right? Let's get it to five. Keep in mind that number, five, it's important, right?
+25:54
+Look up, we're gonna switch tenant to GreenTenant, and we're going to invoke exactly the same function.
+25:59
+No redeploys. You see the counters going from start, right? Counters are starting from zero, right?
+26:05
+Because, now, the execution environments that belong to the green tenant are not overlapping with blue tenant.
+26:11
+The execution environment for blue tenant, it's still up there. It's just requests are no longer routed to it,
+26:17
+because we changed Tenant ID to GreenTenant, okay? So let's get that counter to, let's say, nine-ish.
+26:25
+Right, 9, 10. Let's switch back. Look up, we're changing GreenTenant back to BlueTenant, okay?
+26:32
+Remember five, let's invoke that function. Six, seven, and so on.
+26:38
+Every tenant, we identify them by Tenant IDs that you provide us, has different execution environments.
+26:44
+Let's change that to OrangeTenant, something we haven't seen before. You invoke it and it starts from zero, right?
+26:51
+Because this is a new tenant, okay? Now, those counters are just a simple example,
+26:56
+but imagine you load some tenant-specific configurations, some tenant-specific data, right?
+27:02
+Database connection strings, right? You cache some tenant-specific information, right?
+27:08
+So previously, if it's a multi-tenant function, it was up to you to clean those leftovers up
+27:14
+between requests, right? Well, you know, doable, totally doable, right?
+27:19
+It's not like it's a new thing. It's been in shared compute for years, right? And now, you know, we kind of isolate
+27:27
+those compute environments for you, right? So, you know, the data is never shared
+27:32
+across different tenants. All right, let's see how this actually works.
+27:38
+Cool, so, first of all, how do you create a function with tenant isolation mode, right? It's a new property, right?
+27:44
+It's already supported with CDK, and Terraform, and a few other infrastructure-as-code tools, right?
+27:50
+Literally when you create a function, you specify a new property called - -tenancy-config'{"TenantIsolationMode":"PER_TENANT"}'
+27:57
+So we're isolating compute per tenant, okay? This is only available when you create a new function.
+28:03
+It's not something you can change for existing functions, right? Because this is security, right,
+28:09
+we don't want to play that game, you know, where you're changing this configuration, and something unexpected might happen, right?
+28:15
+Security is not a joke. Next, when you invoke these functions, you need to supply a Tenant ID, okay?
+28:23
+Once again, parameter, you only need it when you enable the tenant isolation mode on a particular function.
+28:29
+If you're not going to supply that Tenant ID, there is no default. You're gonna receive an error saying, "Missing parameter."
+28:34
+It's a required, mandatory parameter that you need to supply. That's pretty much it.
+28:41
+There is nothing else, right? That's it, that's how you create it, this is how you use it, right?
+28:46
+This could have been a very short session, okay? We try to make it very, very simple for you.
+28:52
+But let's get into a more advanced topics. Probably, you're asking, "Great, Tenant ID.
+28:57
+We're passing that tenantId into the function. Any chance I have access to that tenantId
+29:02
+from within my code?" 'Cause you probably wanna do some tenant-specific logic. Well, the answer is yes.
+29:09
+We're propagating that tenantId into your function handler. So the context object will have a new property called,
+29:15
+surprise, tenantId. And this is exactly the tenantId that you gave us, right? So within your code, you can actually, you know,
+29:23
+easily access that information, and if you need to do some branching logic based on the tenantId.
+29:30
+Now, let's talk a little bit about how you use it. So, first of all, there's no need to preregister tenants, right?
+29:36
+We're not asking you to give us the list of tenants. You know, no need to preregister whatsoever.
+29:42
+Second, unlimited number of tenants, right? There's no quota for like 10,000 tenants, right?
+29:48
+As many tenants as you want. There is considerations, we'll talk about that, but essentially unlimited number of tenants.
+29:56
+Tenant ID is any arbitrary alphanumeric string up to 128 characters, right?
+30:03
+You can have it as good, you can have it as, you know, some unique identifier you already have in your system, right?
+30:08
+We don't care as long as it's arbitrary alphanumeric string up to 128 characters, okay?
+30:17
+The last one, obviously supported for both ZIPs and container images, we want everyone to enjoy this new capability.
+30:26
+Sounds great so far, right? But, obviously, considerations, right? It's always about knowing the considerations
+30:31
+for each capability. So first of all, since we're creating
+30:37
+separate execution environments per tenant, your cold starts are also per tenant now, right?
+30:42
+You want to have data isolation, right, sorry, the compute isolation,
+30:48
+so your cold starts are starting to be per tenant as well, because tenants are no longer sharing
+30:53
+execution environments, right? That's something important to know. So tenants with a lot of invokes,
+30:58
+they will probably not even notice that. Tenants that invoke like, you know, three times a day, probably every single invoke is going to be
+31:05
+a cold start, right? So this is important to remember. Concurrency quotas apply, right?
+31:10
+Keep in mind, now, we're creating more execution environments, right? If, previously, you were handling, you know,
+31:17
+maybe 10 tenants with one execution environment, now, 10 tenants means at least 10 execution environments.
+31:23
+So your concurrency quotas are still applicable, right? Your concurrency quota per account, burst, etc., etc.
+31:30
+We've documented it really well in our docs.
+31:35
+Provision concurrency is not supported for obvious reasons, right? Provision concurrency means we're pre-warming
+31:42
+a pool of execution environments, right? But, you know, we cannot pre-warm that if we don't know who the tenants are, right?
+31:49
+So, at this point, we'll see what happens in the future, but, at this point, provision concurrency is not available
+31:54
+for this feature, and it's supported for direct invocations or API Gateway integrations only at this point.
+32:02
+So if you have your own control plane, and you're invoking Lambdas, you can do it easily. Or, if you use API Gateway,
+32:09
+we will show how it works with API Gateway in a few slides, okay? So the next big question is
+32:16
+what about observability, right? We have compute isolation, how do we achieve tenant-level observability, right?
+32:23
+Well, first of all, if you're not yet using JSON-formatted logging, please do, right?
+32:29
+We highly recommend you use JSON-formatted logging. It makes everyone's life easier.
+32:35
+Those are the logs you can query, right, and receive information based on your queries. When you enable JSON-based logging,
+32:41
+we will automatically inject tenantId into your logs, right, as you can see here on the screen. You no longer need to have specialized log lines
+32:49
+in your code to manually print tenantId, right? Now, we inject it automatically into your logs.
+32:57
+But how you actually process those logs, right? How you actually make use of them? So you probably know that Lambda can
+33:03
+automatically make logs, either CloudWatch, S3, or Firehose, right? By default it's CloudWatch
+33:09
+is probably one of the most common ones, so we'll be talking about CloudWatch today, okay? So, by default, each function gets its own log group.
+33:19
+This is how it worked for years, right? This is not new, okay? Each function will get a dedicated log group.
+33:27
+Now, within that log group, you will see a collection of log streams. Again, nothing new.
+33:33
+Each execution environment is getting its own log stream.
+33:38
+This is how it worked for years, right? Nothing new so far, okay? What's new is, now,
+33:45
+these log streams are tenant-specific, okay? Because you have tenant-specific execution environments,
+33:53
+those log streams are also tenant-specific. To summarize, each tenant will have multiple log streams.
+34:01
+Each log stream belongs to a single tenant only. Make sense?
+34:06
+Okay, let's dive deeper. So a little something you probably already know, but these names are not completely random, right?
+34:14
+They actually have a meaning, right? So they start with date, then you have the function name,
+34:20
+then you have function version, and then you have that random execution environment ID.
+34:25
+So if you know the structure, you can make your querying a little bit more powerful.
+34:30
+Right, for example, okay, let's start with, you know, development scenario.
+34:35
+I want to observe my logs, tenant specific, in real time, okay?
+34:42
+So you can use Live Tail, it's a feature of CloudWatch, or you have it embedded in Lambda console as well, right?
+34:48
+So you can select log groups. Remember, log group equals function.
+34:54
+So you can select multiple log groups, which means multiple functions. You can select log streams,
+35:00
+meaning you can select streams that belong to a particular tenant, okay? And you can also specify, for example,
+35:07
+Tenant ID as a filter pattern, okay? So we know it's BlueTenant. As a result, this is what you're getting.
+35:15
+You're getting logs live, right, because we're using Logs Tail here, right?
+35:21
+And you're only getting logs for a particular tenant ID. If you're not using this filtering,
+35:26
+once again, you're gonna get all the logs, right? But if you do want tenant-specific observability, right,
+35:32
+for a specific tenant, you can easily achieve that with this filtering, right? Just specify the tenant ID,
+35:38
+and we're gonna filter it for you. Now, this is live logs. What if you have like three weeks
+35:44
+or three months worth of logs, and you want to get logs for a particular tenant, right?
+35:50
+Well, you can use Logs Insights for that, right? Once again, it's all query-based logging. So here I have an example, you know, of login sites query
+36:00
+that will get me a list of log streams for a particular tenant, okay?
+36:06
+So I'm thinking in my head, "All right, I got my BlueTenant. I want to see what are all the log streams
+36:12
+that belong to this particular tenant." So running this query, for example, will yield me something like this, right?
+36:19
+So you can see I got three log streams that belong to that particular tenant. You can limit it by time, by number,
+36:25
+you know, standard querying, right, and I can see the log count here as well, right?
+36:31
+So I can see what are the log streams that belong to a particular tenant. I can make it also simpler.
+36:37
+What if I don't care about looking at which are the log streams? I just want to see logs for a specific tenant, right?
+36:43
+I don't care how they are spread across different log streams, because, obviously, each tenant will have
+36:49
+multiple execution environments. Every single one of them is tenant-specific, but multiple. So I can run a query,
+36:55
+"Just get me all the messages for BlueTenant," right, and I want to limit that by length with 1,000, right?
+37:02
+Here you go. The query will return you tenant-specific logs, right,
+37:08
+that are stored in CloudWatch log groups and log streams. Now, if you're using a third-party observability provider,
+37:16
+they will have something similar very commonly, you know, some sort of filtering capability, because, once again, with structured logs,
+37:23
+tenantId is just one of the properties of the JSON object, okay? It's super easy to query on.
+37:30
+But what about beyond logs, right? What else can you do which is, you know,
+37:35
+a little bit more sophisticated and advanced? Well, how about sending tenant-specific custom business metrics, okay?
+37:44
+So who's here using Powertools for Lambda? Okay, quite a lot of people are familiar with that, right?
+37:49
+So here I got an interesting example. Powertools is an open-source library, right,
+37:55
+that you can use for Lambda. We support it for a multitude of languages runtimes, right? Here, I got NodeJS example, right?
+38:03
+So I'm creating a new metrics object, because I wanna start emitting tenant-specific metrics,
+38:09
+not logs, metrics. Inside of my handler, I'm adding a tenant dimension to my metrics, right?
+38:16
+So, from this point on, every metric I emit from my function
+38:22
+will be tenant-specific, okay? I can still emit like general metrics, right, which are not tenant-specific,
+38:28
+but, now, I can also emit tenant-specific metrics, which is extremely powerful, right?
+38:33
+So, oops, let's go one slide back. So you know, I can add successful bookings
+38:39
+at the bottom, right, and publish those metrics, and now I'm getting that information per tenant,
+38:45
+so per-tenant observability story is also quite strong. Let's talk a little bit about integrating with API Gateway, right?
+38:52
+Because this is a very common scenario, right, where your tenants are coming through an API, which leads to Lambda.
+38:58
+So, you know, you already know that, when the tenant isolation mode is enabled, Lambda expects that tenantId parameter
+39:06
+to be sent for each invocation. But how does it actually work
+39:11
+on a wire protocol level, right? Let's get into the nitty-gritty details, right? Well, from the protocol's perspective,
+39:18
+the way the tenant ID is propagated down to Lambda is by using an HTTP header
+39:23
+called X-Amz-Tenant-Id, okay? And the value of that header is
+39:29
+that BlueTenant, GreenTenant, or whatever you specify. But the big question is
+39:36
+where's that value is coming from from the original request, right? You know what Lambda expects, right? But, you know, you might have different use cases.
+39:44
+For example, what if you are using HTTP headers to pass Tenant ID, right,
+39:50
+or query parameters, or path parameters. You can do all of this. What if you wanna use domain prefix, right?
+39:56
+The way you identify your tenants is you're creating a sub-domain for each tenant.
+40:02
+You wanna use that as tenant ID, doable. What about information coming from Lambda Authorizer?
+40:08
+What about information in JWT claims, or account, or anything else, right? All of this is doable.
+40:15
+And let's see how do you do that? So, first, let's define terminology, right? This is API Gateway terminology
+40:20
+that we will use for the next five-ish minutes, right? It's important to understand it. The inbound request into API Gateway,
+40:28
+we call it method request, right, because it hits a particular HTTP method, like GET, or POST, or whatever, right?
+40:34
+So the inbound is method request. The outbound from API Gateway down to Lambda,
+40:39
+that's called integration request, because this is the downstream back-end integration, okay?
+40:45
+Easy. What I wanna do is I wanna take, for example, arbitrary example,
+40:50
+I wanna take some custom header from the method request, and I'm using x-tenant-id, arbitrary name,
+40:57
+you can name it whatever you want, right? I'm just using that as an example. I wanna take the value of that inbound x-tenant-id,
+41:05
+and I wanna use it as the value of that X-Amz-Tenant-Id header that goes to the Lambda, right?
+41:11
+So this is something I want to achieve. How do I do it? I'll be using CDK as an example. Obviously, you can do it
+41:16
+with any other infrastructure-as-code, or click through in the console, right? So, first of all, when you create a resource,
+41:23
+and creating a method, a GET method on that resource, you can specify, and this is why we had to do the terminology first,
+41:30
+'method.request.header.x-tenant-id': true.
+41:35
+So this configuration basically tells API Gateway that I expect this x-tenant-id header, and it's required,
+41:43
+true means required, right? Because you don't want to process requests without tenant ID. The second thing is,
+41:50
+when you're configuring your integration, once again, this is the reason we had to do terminology piece first,
+41:55
+you're saying that, "I want to map integration request header X-Amz-Tenant-Id to the value
+42:03
+of method request header x-tenant-id, okay? Essentially, you're saying, "That's the header that I want to go to Lambda,
+42:10
+to my downstream integration, and this is the source of the value
+42:16
+that I want you to use," right? And this is just an example of how you can map any custom HTTP header
+42:23
+to be your tenant identifier. Now, this is just one of the examples, right? This value, like I said,
+42:29
+it could come from a lot of different sources. Any request header, any request query parameter,
+42:36
+path parameter, request body, principalId of your authorizer, or any custom property you return from the authorizer,
+42:44
+you can use domain prefix for that, right? Essentially, you know, anything you have access to in API Gateway,
+42:49
+you can use it as a value for tenant ID. We published a sample, you'll see the link at the very end, right,
+42:55
+we published a sample code illustrating how to achieve that through an authorizer, right, JWT tokens and authorizer.
+43:01
+How do you do that? It's pretty simple, it's a couple of lines of code, okay?
+43:07
+Since we're already talking about API Gateway, let's address the noisy neighbor problem, right? That's kind of, you know, one of the things that we've discussed previously.
+43:14
+So API Gateway provides a capability to create usage plans. For example, this is a common approach.
+43:20
+You have different tiers like silver, gold, bronze tiers, and you can define request rates
+43:27
+for each one of those tiers, okay? For example, 10 requests per second, 30, 20, etc.
+43:32
+Now, once you map those tiers to your tenants, this gives you protection for noisy neighbors, right?
+43:40
+So with API Gateway, you implement noisy neighbor protection even before these requests hit Lambda, right?
+43:47
+So you don't need to do it in any way in your code, you just do it at the API level, and the service takes care of that for you, right?
+43:55
+And, once again, you can use the same tenant ID that you've used before that is incoming from your client request.
+44:02
+You can use the same tenant ID to identify which plan that tenant is associated with, right?
+44:08
+So API Gateway helps you here as well. Let's move on.
+44:15
+Quick question, what's missing in this picture? If we're talking about a real application.
+44:22
+Storage, you know, dependencies, right? Your architecture doesn't end with Lambda, right? Your Lambda doesn't live in a vacuum.
+44:28
+It does something. It needs to access some downstream like databases, S3.
+44:34
+It needs to talk to something, right? So, obviously, you know, there are some dependencies
+44:39
+that your Lambda needs to access. It can be what I have here: S3 bucket, DynamoDB, SQS, and many, many more.
+44:46
+How do you do it traditionally, right? Well, you use the SDK. And how do you manage IAM?
+44:51
+You have the function execution role, right? And this is important, right? This one is very important security wise.
+44:57
+Function execution role, right, is function execution role. It's not a tenant execution role, right?
+45:04
+So it's applicable at the function level, okay? Whatever function execution role allows to do,
+45:11
+every single tenant will be able to do that, okay? It's a function-level construct.
+45:17
+Very similar to like Bill showed before, for example, environment variables are also function-level construct,
+45:23
+not tenant-level construct, right? But the big question is, "Okay, cool, we understand that.
+45:29
+Important to understand. Can we do it a little bit more fine-grained?" Well, let's see how you can do it, okay?
+45:36
+So let's say a typical scenario of clients using JWT, right? A very common scenario for authorization.
+45:44
+Now, the token, since we're using API Gateway, is propagated all the way to Lambda Authorizer, right?
+45:49
+And inside of that authorizer, you can do a few pretty cool things. Well, first of all, obviously, you validate the token, right?
+45:54
+That's the reason you got the authorizer there, right? So you want to extract information from that token. You can validate it against Cognito,
+46:01
+or whatever identity provider you're using, right? So, first thing you do, obviously, you validate that token, maybe extract some identity.
+46:09
+Second, optional, you might have some custom logic there, custom policies you want to apply.
+46:16
+So not only this token is valid, but what are the permissions, custom permissions, right,
+46:21
+on that token, maybe you store them in Dynamo, maybe you have some external system, you know, you validate additional permissions for that specific token.
+46:30
+But next thing is actually pretty cool. You can retrieve tenant-scoped,
+46:35
+short-lived credentials from STS. So, at this point, by the time you're getting to the third bullet here,
+46:42
+you validated that tenant. You know that this tenant is actually who they claim to be, right, and their policies allow them to do
+46:48
+what they're asking to do. So what you can do here is let's get tenant-scoped credentials,
+46:54
+not the function execution role, right, something that is specific to this tenant, and then you propagate that information
+47:01
+from API Gateway down to Lambda. So what it actually means is, now your Lambda function got two sets of credentials.
+47:10
+The function execution role allows your function to perform actions which are not tenant-specific, right?
+47:16
+It's pretty common for every single tenant being able to access some shared storage, right,
+47:22
+where they have information that everyone needs to access, right? But the tenant-scoped credential actually restricts
+47:28
+your function to be able to access the data that only this particular tenant can access.
+47:35
+Let's take a look at the example of this, okay? So let's see how this works.
+47:40
+So we're getting a request from BlueTenant, okay? That tenant is hitting API Gateway, right?
+47:46
+API Gateway forwards the request to Lambda. Obviously, BlueTenant execution environment is being used.
+47:51
+So, at this point in time, that BlueTenant execution environment, it can access shared bucket, right?
+47:56
+You have some shared bucket there. It uses function execution role to access that shared bucket.
+48:02
+But in addition it can access the Blue Bucket. Why? Well, because you have tenant-scoped credential
+48:09
+that allows it to access Blue Bucket. What it cannot do is access Green Bucket or Yellow Bucket,
+48:15
+because there are no permissions available to that function, at this current request, that allow it to access these two buckets
+48:22
+that belong to two different tenants. And whenever the next request is coming in from YellowTenant, for example, right?
+48:29
+So it's served by the yellow execution environment, right? Yellow execution environment can access the shared bucket.
+48:37
+Everyone can access the shared bucket, right? It cannot access Blue, it cannot access Green,
+48:42
+it can access Yellow bucket because you have the function-level credentials, and then you have tenant-scoped credentials, right?
+48:51
+All right, time to start wrapping up. We've got about 10 minutes left. So, obviously, you know, we need to show end-to-end demo, right,
+48:57
+to actually prove you that this works, and you have this whole thing available on GitHub. You'll see it in a moment. So, before I show you the demo,
+49:04
+I want to explain you what's gonna happen, because the demo is going to be like me sending three requests through Postman, right?
+49:09
+It's not that impressive if you do not understand what's happening under the hood, okay? First of all, I'll have two tenants,
+49:16
+and I will pass my tenant ID as JWT claim, all right?
+49:22
+I have an authorizer function that receives that JWT, validates it, right,
+49:28
+those are like real fine JWTs, right? It's validated and it returns context with tenantId, okay?
+49:36
+I'm not using usageIdentifierKey here, right, it's optional, right? I'm not using it for the sake of this demo,
+49:41
+but you can, right, essentially, if you want to introduce usage plans as well. So the context returned
+49:48
+from the authorizer response contains tenantId. What do I do next?
+49:53
+When I'm defining my Lambda integration, I'm saying that integration.request.header.X-Amz-Tenant-Id,
+50:03
+and the value is coming from context.authorizer.tenantId. This is like the most critical part of the slide.
+50:09
+I hope this is clear, right? This is where I'm saying, "Take the tenant ID from authorizer response,
+50:15
+and use it for making a request to Lambda function as that, you know, header," right?
+50:20
+It's like one-line configuration, and this is where the whole magic is happening.
+50:25
+So, once I've configured that, the request from API Gateway to Lambda will actually have
+50:31
+that X-Amz-Tenant-Id header saying BlueTenant. So I validate a token in the authorizer,
+50:38
+I return the tenant ID, well, the string I want to use as tenant ID. You don't have to return exactly the same tenant ID.
+50:45
+Maybe it's sensitive, maybe you want to anonymize it, right, or generate hash out of it. As long as it's a unique string,
+50:52
+we don't care what it means for you, right? So it can be anything, right? And that BlueTenant is going to be propagated
+50:59
+all the way to my multi-tenant function, it will be processed by the blue execution environment, okay?
+51:05
+So now that you know how magic works under the hood, let's actually see the magic. All right, Postman this time,
+51:11
+because I'm using API Gateway, it's no longer just Lambda. Okay, so I'm sending a few requests here,
+51:17
+and I'm getting message unauthorized, because I don't have that token just yet, right? You can see here. So let's add the authorization header, right?
+51:25
+I'm a huge fan of JWTs, and this is JWT that represents, your guessed, the BlueTenant.
+51:31
+And it's the same story, I still have my counters running, right? Four, five, etc., okay?
+51:37
+Keep in mind we stopped at five, BlueTenant, five. I'm going to replace the token with another token
+51:43
+that, this time, belongs to GreenTenant, okay? So let's send a new request. You can see that this is a GreenTenant,
+51:50
+and the counters are starting from scratch. Why? Once again, because GreenTenant is getting a different set of execution environments,
+51:57
+they're not sharing any virtual resources. CPU, memory, disk, nothing is shared across tenants.
+52:02
+Okay, I got to 10, let's switch it back to Blue, invoke, and we're continuing with six, seven, and so on, right?
+52:10
+So it's basically the demo you saw before, but, now, it's full integration with API Gateway,
+52:15
+including authorization component, okay? So this is the slide that I showed you
+52:23
+20 something minutes ago, right? The multi-tenant function model got benefits, but also got considerations.
+52:30
+In the last 25-ish minutes, I hope I proved that, with tenant isolation mode,
+52:36
+we've addressed most of these considerations, right? So we've addressed the problem of noisy neighbors potential
+52:43
+through integration with API Gateway usage plans, right? We addressed that your architecture might require
+52:50
+additional compute isolation, right? Not something you handle in the code.
+52:55
+Something that we provide you with, okay? Now, you have that. Cleaning up the leftovers.
+53:01
+You know, it's still a good practice to clean up leftovers, but now we kind of reduce the criticality of this, right?
+53:07
+Because compute environments are never shared across tenants, right? So, if you introduce a bug,
+53:14
+it's still a good idea to fix that bug, right, but we made it less critical, okay?
+53:20
+Per-tenant observability is harder. Now you have per-tenant logs, you can emit per-tenant metrics.
+53:25
+You got all of that. To be very, very fair, tenant-specific feature rollout is harder.
+53:30
+You know, let's mark it as yellow, right? It's not exactly the problem we solved. It is easier because you have the tenant information
+53:37
+in your function code, but you still need to do some, you know, if tenantID equals, or case tenantId, right?
+53:44
+You still need to do something in your code, but it is a little bit easier. So, you know, to be fair, we'll keep it as yellow.
+53:51
+So this is where our story comes to a happy end. Joe identified a way forward that will not require his team
+53:58
+to create hundreds of thousands, or whatever, functions, separate functions with duplicated code.
+54:03
+They can create small number of functions, right, and Lambda will provide separate execution environments
+54:10
+for each tenant, right? So the tenant compute isolation mode essentially provided Joe's team with ability to focus on, you know,
+54:20
+delivering business value, right? They can innovate faster. That's another problem that, previously, they had to solve,
+54:26
+and now they can focus on what actually matters. To conclude, so understand tenant isolation requirements
+54:35
+of your workload, and implementation specifics in your architecture. The tenant isolation mode,
+54:40
+like, you know, don't quote me on that, yeah, this goes on YouTube, right, don't quote me on that.
+54:45
+Based on my knowledge, Lambda is the only service I'm aware of that provides you tenant-level compute isolation
+54:51
+within a single compute unit function, right? I'm personally not aware of anything else
+54:57
+that does that, right? But it doesn't mean it solves 100% of all the use cases.
+55:02
+In some cases, you might still need to do, you know, function per tenant, where it's a hard requirement of your customers, right?
+55:09
+Sometimes, they will say, you know, "Isolate them, not just per function. Isolate them across different accounts."
+55:16
+So the first thing is understand what's your customer demand, right, and how you meet that customer demand
+55:21
+in the most efficient way, and tenant isolation mode kind of helps you to make it more efficient.
+55:27
+Second, leverage tenant isolation mode for multi-tenant SaaS applications
+55:32
+that require higher degree of vendor-provided compute isolation, right?
+55:37
+Was it a blocker previously? Not exactly. But who was responsible for that? You, right?
+55:42
+Now, we're saying, "We're gonna help you with that. We're going to provide you vendor-provided, we're gonna give you
+55:48
+vendor-provided compute isolation per tenant." Three, use built-in observability features,
+55:54
+like per-tenant monitoring and API Gateway integration, for stronger security in your SaaS application.
+56:01
+Now, this slide has some other sessions that are quite interesting on this and related topics.
+56:07
+We're here on Thursday afternoon, so you're probably gonna see them on YouTube, okay, not live.
+56:12
+If you're not yet familiar with serverless land, this is the website that is maintained
+56:18
+by our solution architects and developer advocates. It has hundreds if not thousands pieces of information,
+56:25
+samples, reference architecture. We run weekly serverless office hours on YouTube and Twitch,
+56:31
+where we talk about every single new feature we launch in details. No marketing, very technical, right?
+56:36
+I highly recommend, if you're not subscribed to that, do that. And the last thing that I promised you,
+56:42
+but not fulfilled just yet, that's the giant QR code that will give you everything you saw today,
+56:48
+including these slides, sample code, additional links, everything pretty much, okay?
+56:55
+So thank you so much for coming. I hope this was helpful. I hope you learned about this new capability.
+57:02
+Me, Bill, and Ayush, he's the product manager for this amazing feature, we're gonna be right outside if you have any questions.
+57:08
+We're happy to address any questions just outside. Thank you so much and enjoy re:Invent. (audience clapping)

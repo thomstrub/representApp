@@ -1,0 +1,202 @@
+# AWS Lambda Multi-Tenant Isolation Mode - Key Information
+
+**Source:** AWS Compute Blog (November 20, 2025)
+**URL:** https://aws.amazon.com/blogs/compute/building-multi-tenant-saas-applications-with-aws-lambdas-new-tenant-isolation-mode/
+**Authors:** Anton Aleksandov and Ayush Kulkarni
+
+## Summary
+
+AWS Lambda introduced a new tenant isolation mode that allows processing function invocations in separate execution environments for each application tenant, simplifying secure multi-tenant SaaS application development.
+
+## Key Concepts
+
+### Problem Statement
+- Multi-tenant SaaS applications handling sensitive tenant data need higher isolation
+- Previous solutions required custom SDKs/logic or separate functions per tenant
+- Function-per-tenant approach provided isolation but increased operational complexity
+
+### Solution: Tenant Isolation Mode
+- New Lambda capability isolates execution environments per tenant
+- Single function can serve multiple tenants with isolated compute environments
+- Each execution environment is reused only for invocations from the same tenant
+- Maintains performance benefits of warm execution environments while ensuring tenant isolation
+
+## Implementation
+
+### Creating Function with Tenant Isolation
+```bash
+aws lambda create-function \
+   --function-name my-function1 \
+   --runtime nodejs22.x \
+   --zip-file fileb://my-function1.zip \
+   --handler index.handler \
+   --role arn:aws:iam:1234567890:role/my-function-role \
+   --tenancy-config '{"TenantIsolationMode": "PER_TENANT"}'
+```
+
+### Invoking with Tenant ID
+```bash
+aws lambda invoke \
+   --function-name my-function \
+   --tenant-id BlueTenant \
+   response.json
+```
+
+### Accessing Tenant ID in Code
+The tenant ID is available through the function handler's context object:
+```javascript
+exports.handler = async function (event, context) {
+   const tenantId = context.tenantId;
+   // Process tenant-specific logic
+   return {
+      statusCode: 200,
+      body: `OK for tenantId=${tenantId}`
+   };
+};
+```
+
+## API Gateway Integration
+
+### Key Points
+- API Gateway invokes Lambda using the Invoke API
+- Tenant ID passed via `X-Amz-Tenant-Id` HTTP header
+- Can obtain tenant ID from:
+  - HTTP headers
+  - Query parameters
+  - Path parameters
+  - Lambda Authorizer (JWT claims, principal ID)
+
+### CDK Configuration Example
+```javascript
+const lambdaIntegration = new ApiGw.LambdaIntegration(fn, {
+   requestParameters: {
+      'integration.request.header.X-Amz-Tenant-Id': 'method.request.header.x-tenant-id'
+   }
+});
+
+resource.addMethod('GET', lambdaIntegration, {
+   requestParameters: {
+      'method.request.header.x-tenant-id': true
+   }
+});
+```
+
+## Observability
+
+### Features
+- Automatic tenant ID inclusion in function logs (with JSON logging enabled)
+- Separate CloudWatch log stream per execution environment
+- Available in both platform events and custom logs
+
+### CloudWatch Log Insights Queries
+Find log streams for specific tenant:
+```
+fields @logStream, @message
+| filter tenantId=='BlueTenant' or record.tenantId=='BlueTenant'
+| stats count() as logCount by @logStream
+| sort @timestamp desc
+```
+
+Retrieve tenant-specific logs:
+```
+fields @message
+| filter tenantId=='BlueTenant' or record.tenantId=='BlueTenant'
+| limit 1000
+```
+
+## Feature Comparison
+
+| Feature | Without Tenant Isolation | With Tenant Isolation |
+|---------|-------------------------|---------------------|
+| Execution environment isolation | Per function version | Per tenant invoking function |
+| Execution environment reuse | All invocations of function version | Only invocations from same tenant |
+| Data on disk/in-memory | Accessible across all invocations | Only accessible to same tenant |
+| Cold starts | When no warm environments available | When no tenant-specific warm environments available (more cold starts expected) |
+
+## Important Considerations
+
+1. **Isolation Scope**
+   - Each tenant's execution environments isolated from others
+   - Tenant data on disk/memory separated
+   - All tenants share function's execution role
+
+2. **Performance**
+   - Higher percentage of cold starts expected
+   - Due to tenant-specific execution environments
+
+3. **Pricing**
+   - Fee for each new tenant-specific execution environment
+   - Based on memory configured for function
+
+4. **Configuration**
+   - Only configurable at function creation time
+   - Cannot be updated for existing functions
+   - Tenant ID parameter required for all invocations
+
+## Best Practices
+
+1. **Security**
+   - Implement robust tenant ID validation at application layer
+   - Prevent unauthorized access through tenant ID manipulation
+   - Use dedicated service/database to maintain valid tenant IDs
+
+2. **Monitoring**
+   - Monitor and audit tenant access patterns regularly
+   - Detect security anomalies or unauthorized cross-tenant access attempts
+
+3. **Capacity Planning**
+   - Be aware of Lambda concurrency quotas
+   - May need quota increases based on tenant count and usage patterns
+
+## Use Cases
+
+### Ideal For:
+- Multi-tenant SaaS applications with sensitive tenant data
+- Applications executing dynamically supplied tenant code
+- Systems needing tenant-level compute isolation
+- Architectures requiring simplified tenant management
+
+### Benefits:
+- No custom isolation logic needed
+- Simplified architecture vs function-per-tenant
+- Performance benefits of warm execution environments
+- Built-in tenant-aware observability
+
+## Resources
+
+- **Documentation:** AWS Lambda tenant isolation documentation
+- **Sample Code:** GitHub repository with API Gateway integration example
+- **Pricing:** AWS Lambda pricing page
+
+## Relevance to Represent App
+
+This feature is highly relevant for the Represent App project due to:
+
+1. **Multi-tenancy Requirements**
+   - Different states/counties have varying data structures
+   - Need to isolate data across different political jurisdictions
+
+2. **Security**
+   - Sensitive constituent and representative data
+   - Prevents cross-tenant data leakage
+
+3. **Simplified Architecture**
+   - Single Lambda function can handle all tenants (states/counties)
+   - Reduced operational complexity vs separate functions per state
+
+4. **Performance**
+   - Can cache tenant-specific configuration (state/county rules)
+   - Warm execution environments per tenant maintain performance
+
+5. **Observability**
+   - Easy debugging of state/county-specific issues
+   - Tenant-aware logging helps track region-specific problems
+
+## Implementation Recommendations for Represent App
+
+1. Use state or county identifiers as tenant IDs
+2. Cache state-specific political data and rules in memory
+3. Implement tenant ID validation for state/county codes
+4. Use API Gateway integration with tenant ID from request headers
+5. Monitor per-state/county usage patterns
+6. Plan for cold starts with higher tenant counts
