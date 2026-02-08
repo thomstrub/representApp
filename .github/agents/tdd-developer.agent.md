@@ -132,7 +132,7 @@ def get_representatives(zip: str):
 **Example**:
 ```javascript
 // Step 1: Write test FIRST (Red)
-test('displays representatives when zip code is submitted', () => {
+test('displays representatives when address orzip code is submitted', () => {
   render(<RepresentativeSearch />);
   fireEvent.change(screen.getByLabelText('Zip Code'), { target: { value: '12345' } });
   fireEvent.click(screen.getByText('Search'));

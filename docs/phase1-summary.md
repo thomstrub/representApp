@@ -196,7 +196,7 @@ Execute in this order (see [design-research.md](design-research.md) for details)
 #### 2.2: DynamoDB Schema Design & Implementation
 - [ ] Update DynamoDB table schema for representative data
 - [ ] Implement multi-tenant partition keys (TENANT#{state_code})
-- [ ] Create GSI for zip code lookups (ZipCodeIndex)
+- [ ] Create GSI for address and zip code lookups (LocationIndex)
 - [ ] Add TTL attribute for cache expiration
 - [ ] Update RepresentativeStore with new query methods
 - [ ] Update CDK stack with new table configuration
@@ -228,7 +228,7 @@ Execute in this order (see [design-research.md](design-research.md) for details)
 
 #### 2.5: Testing & Validation
 - [ ] Add integration tests for complete API flow
-- [ ] Test zip code lookup end-to-end
+- [ ] Test address and zip code lookup end-to-end
 - [ ] Validate caching improves performance
 - [ ] Test error handling scenarios
 - [ ] Ensure >80% test coverage
@@ -238,7 +238,7 @@ Execute in this order (see [design-research.md](design-research.md) for details)
 
 #### Phase 3: Frontend Development
 - [ ] Create React frontend with Material UI
-- [ ] Implement zip code input component
+- [ ] Implement address and zip code input component
 - [ ] Display representatives by government level
 - [ ] Add CORS configuration to API Gateway
 - [ ] Implement responsive design
