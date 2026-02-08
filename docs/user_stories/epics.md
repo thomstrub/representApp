@@ -12,30 +12,61 @@ This document outlines the epics and user stories for Represent App, organized b
 
 ### Epic 1: Design Research Implementation (Phase 2) 🔄
 
-**Goal**: Implement patterns from civic tech repository analysis to build core MVP functionality for finding representatives by zip code.
+**Goal**: Research and implement API integration using OpenStates.org or Washington state-specific APIs to build core MVP functionality for finding representatives by address or zip code.
 
 **Status**: Current Phase
 
 #### User Stories
 
-**As a developer**, I want to integrate with the Google Civic Information API so that I can retrieve authoritative representative data for any US location.
+**As a developer**, I want to research GitHub projects that leverage OpenStates.org API or Washington state-specific APIs so that I can identify the best approach for retrieving representative information by address and zip code.
 
 **Acceptance Criteria**:
-- Google Civic API key registered and stored in AWS Systems Manager Parameter Store
-- Lambda handler makes authenticated requests to Google Civic API
-- API responses are properly parsed and validated
-- Error handling for rate limits, timeouts, and invalid responses implemented
-- Retry logic with exponential backoff in place
-- Unit tests with mocked API responses created
-- Integration tests with real API (rate-limited) pass
+- Search GitHub for projects using OpenStates.org API
+- Search GitHub for projects using Washington state-specific APIs (e.g., Washington State Legislature API)
+- check this project and see how to integrate: https://github.com/openstates/people
+- Identify ways to get OCD information to use for other APIs from Google's Civic Information API divisions endpoint
+- Analyze at least 3 relevant projects for:
+  - API authentication and key management patterns
+  - Address/zip code to representative lookup implementation (can potentially use the google civic api for this step)
+  - Data models and response parsing
+  - Error handling and retry logic
+  - Caching strategies
+- Document findings in `.github/memory/patterns-discovered.md`
+- Compare API capabilities (coverage, rate limits, data freshness)
+- Recommend primary API for implementation with justification
+- Create implementation plan based on research findings
+- DO NOT suggest using the Google Civic Information API for representative lookups
 
+**Technical Details**:
+```
+We will be turning down the Representatives API next year in April 2025. This API gives developers the ability to identify the elected representatives for a residential address or division. When we first launched the API 10 years ago, there was limited offering of political representation data in the civic information ecosystem. Today, there are alternate providers who are able to serve authoritative representation data directly to developers. 
+
+Some key points:
+
+Both representativeInfoByAddress and representativeInfoByDivision methods will be turned down next year in April 2025. 
+
+Until the turndown date, the Representatives API will be functional and supported as usual.
+
+After the turndown date, the Representatives API will not be available.
+
+There is no impact on Elections or Divisions APIs, and they will continue to be supported. 
+
+There are other providers who offer political representation data. The current Representatives API data comes from the Governance Project. 
+
+To ease the transition to other providers of representation data, Google will launch a new method under the Divisions API which can be used to look up Open Civic Data Identifiers (OCD-IDs) for a given residential address. The OCD-ID can then be used to lookup representatives in other providers’ datasets. This launch is planned by Sep 2024 to give time for integration in your applications by the April 2025 turndown date. 
+
+Please reach out to us if you have questions regarding this notice.
+
+
+- Civic Information API team
+```
 ---
 
 **As a developer**, I want to design a multi-tenant DynamoDB schema so that representative data is efficiently stored and retrieved with state-level isolation.
 
 **Acceptance Criteria**:
 - DynamoDB table uses partition key `TENANT#{state_code}` and sort key `REP#{rep_id}`
-- Global Secondary Index `ZipCodeIndex` created for zip code lookups
+- Global Secondary Index `LocationIndex` created for address and zip code lookups
 - TTL attribute configured for automatic cache expiration (24 hours)
 - Multi-tenant data isolation verified with tests
 - RepresentativeStore class updated with new query methods
@@ -75,7 +106,7 @@ This document outlines the epics and user stories for Represent App, organized b
 
 **Acceptance Criteria**:
 - Unit tests for all Phase 2 components
-- Integration tests for complete zip code lookup flow
+- Integration tests for complete address and zip code lookup flow
 - Test coverage exceeds 80%
 - Error handling scenarios tested (invalid zip, API failures)
 - Performance tests validate caching effectiveness
@@ -84,12 +115,14 @@ This document outlines the epics and user stories for Represent App, organized b
 
 ---
 
-**As a user**, I want to enter my zip code and receive a list of all my representatives so that I can easily find who represents me.
+**As a user**, I want to enter my address or zip code and receive a list of all my representatives so that I can easily find who represents me.
 
-**Acceptance Criteria**:
+**Acceptance Criteria:**
+- API endpoint `GET /api/representatives?address={address}` works
 - API endpoint `GET /api/representatives?zip={zipcode}` works
+- Address validation accepts standard US address formats
 - Zip code validation accepts 5-digit and 9-digit formats
-- Response includes all representatives for the zip code
+- Response includes all representatives for the address or zip code
 - Representatives categorized by government level (federal, state, local)
 - Response time under 3 seconds for cache miss
 - Response time under 500ms for cache hit
@@ -99,7 +132,7 @@ This document outlines the epics and user stories for Represent App, organized b
 
 ### Epic 2: Frontend Development (Phase 3)
 
-**Goal**: Create a user-friendly React web interface for zip code lookup and representative display.
+**Goal**: Create a user-friendly React web interface for address and zip code lookup and representative display.
 
 **Status**: Planned
 
@@ -201,7 +234,7 @@ This document outlines the epics and user stories for Represent App, organized b
 - API Gateway custom domain configured
 - SSL/TLS certificate provisioned
 - DNS records updated
-- Application tested with real zip codes
+- Application tested with real addresses and zip codes
 - Production deployment documented
 
 ---
@@ -437,15 +470,16 @@ This document outlines the epics and user stories for Represent App, organized b
 - Unit testing framework
 
 ### Phase 2: Design Research Implementation 🔄 (Current)
-1. Google Civic Information API Integration
-2. DynamoDB Schema Design & Implementation
-3. OCD Division ID Parsing
-4. Multi-Layer Caching Strategy
-5. Comprehensive Testing & Validation
+1. Research and Select API (OpenStates.org or Washington State)
+2. Implement Selected API Integration
+3. DynamoDB Schema Design & Implementation
+4. Government Level Categorization (OCD or equivalent)
+5. Multi-Layer Caching Strategy
+6. Comprehensive Testing & Validation
 
 ### Phase 3: Frontend Development (Next)
 - React application setup
-- Zip code input and validation
+- Address and zip code input and validation
 - Representative display components
 - Responsive design
 - CORS configuration
@@ -468,15 +502,16 @@ This document outlines the epics and user stories for Represent App, organized b
 ## Success Metrics by Epic
 
 ### Epic 1 (Phase 2) Success Criteria
-- ✅ API integration with Google Civic Information API works
+- ✅ Research completed and API selected (OpenStates.org or Washington state API)
+- ✅ API integration works for address and zip code lookups
 - ✅ Multi-tenant DynamoDB schema performs well
-- ✅ OCD parsing correctly categorizes representatives
+- ✅ Representative categorization by government level works correctly
 - ✅ Cache hit rate exceeds 80%
 - ✅ Response times meet targets (<500ms hit, <3s miss)
 - ✅ Test coverage exceeds 80%
 
 ### Epic 2 (Phase 3) Success Criteria
-- ✅ Users can successfully look up representatives by zip code
+- ✅ Users can successfully look up representatives by address or zip code
 - ✅ UI is responsive and accessible (WCAG AA)
 - ✅ Frontend works on mobile, tablet, and desktop
 - ✅ API integration from frontend works smoothly

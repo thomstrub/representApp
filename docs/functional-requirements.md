@@ -7,41 +7,44 @@ This document outlines the functional requirements for Represent App, a serverle
 ### Implementation Approach
 
 The implementation strategy draws from analysis of three production civic tech repositories:
-- **datamade/my-reps**: Google Civic Information API integration patterns, OCD division ID parsing
+- **datamade/my-reps**: API integration patterns, OCD division ID parsing
 - **elisabethvirak/Know_Your_Congress**: Data caching strategies, representative data models
 - **nrenner0211/elect.io**: React component patterns, authentication (GraphQL for post-MVP)
 
 Detailed implementation instructions are documented in [design-research.md](design-research.md). The MVP implementation follows this order:
-1. Google Civic Information API Integration (data source)
-2. DynamoDB Schema Design (multi-tenant storage with caching)
-3. OCD Division ID Parsing (government level categorization)
-4. Multi-Layer Caching Strategy (performance optimization)
+1. Research and Select Government API (OpenStates.org or Washington state-specific)
+2. Implement Selected API Integration (data source)
+3. DynamoDB Schema Design (multi-tenant storage with caching)
+4. Government Level Categorization (OCD or equivalent)
+5. Multi-Layer Caching Strategy (performance optimization)
 
 ## Core Functional Requirements (MVP)
 
 ### 1. Location-Based Representative Lookup
 
-#### 1.1 Zip Code Input and Validation
-- **FR-1.1.1**: System shall accept zip code as input via GET `/api/representatives?zip={zipcode}`
-- **FR-1.1.2**: System shall validate zip code format (5-digit or 9-digit format)
-- **FR-1.1.3**: System shall return appropriate error messages for invalid zip codes (400 Bad Request)
-- **FR-1.1.4**: System shall handle edge cases like military or PO box zip codes
+#### 1.1 Address and Zip Code Input and Validation
+- **FR-1.1.1**: System shall accept address as input via GET `/api/representatives?address={address}`
+- **FR-1.1.2**: System shall accept zip code as input via GET `/api/representatives?zip={zipcode}`
+- **FR-1.1.3**: System shall validate address format and completeness
+- **FR-1.1.4**: System shall validate zip code format (5-digit or 9-digit format)
+- **FR-1.1.5**: System shall return appropriate error messages for invalid addresses or zip codes (400 Bad Request)
+- **FR-1.1.6**: System shall handle edge cases like military or PO box addresses/zip codes
 
 #### 1.2 Government API Integration
 - **FR-1.2.1**: System shall integrate with existing government APIs to retrieve representative data
 - **FR-1.2.2**: System shall query APIs such as:
-  - Google Civic Information API (Primary - MVP)
+  - OpenStates.org API (Primary candidate - MVP)
+  - Washington state-specific APIs (Primary candidate - MVP)
   - ProPublica Congress API (Post-MVP - voting records)
-  - OpenStates API (Post-MVP - state legislature details)
   - Other authoritative government data sources
 - **FR-1.2.3**: System shall handle API rate limits and implement appropriate retry logic
 - **FR-1.2.4**: System shall cache API responses to minimize external API calls and improve performance
 - **FR-1.2.5**: System shall handle API failures gracefully with appropriate error messages
 
-**Implementation Note**: See [design-research.md](design-research.md) Action Item 1 for Google Civic Information API integration patterns based on datamade/my-reps analysis.
+**Implementation Note**: See [design-research.md](design-research.md) for API research and selection process. First step is to analyze GitHub projects using OpenStates.org or Washington state APIs to determine best integration approach.
 
 #### 1.3 Representative Data Retrieval
-- **FR-1.3.1**: System shall return all representatives relevant to the provided zip code (local, state, and federal)
+- **FR-1.3.1**: System shall return all representatives relevant to the provided address or zip code (local, state, and federal)
 - **FR-1.3.2**: System shall categorize representatives by jurisdiction level:
   - Federal (U.S. President, U.S. Senators, U.S. House Representative)
   - State (Governor, State Senators, State Representatives)
@@ -56,10 +59,10 @@ Detailed implementation instructions are documented in [design-research.md](desi
   - Photo (if available)
 - **FR-1.3.4**: System shall return data in a structured JSON format
 
-**Implementation Note**: See [design-research.md](design-research.md) Action Item 2 for OCD Division ID parsing patterns to categorize representatives by government level. Action Item 3 provides DynamoDB schema design for storing representative data.
+**Implementation Note**: See [design-research.md](design-research.md) for government level categorization approach. Categorization method will depend on selected API (OCD Division IDs or equivalent system).
 
 #### 1.4 Geographic Context
-- **FR-1.4.1**: System shall determine political districts from zip code
+- **FR-1.4.1**: System shall determine political districts from address or zip code
 - **FR-1.4.2**: System shall support multiple overlapping jurisdictions for a single location
 - **FR-1.4.3**: System shall provide district information:
   - Congressional district number
@@ -72,7 +75,7 @@ Detailed implementation instructions are documented in [design-research.md](desi
 - **FR-2.1.1**: System shall cache government API responses to reduce latency and API costs
 - **FR-2.1.2**: System shall use appropriate cache TTL (time-to-live) based on data volatility:
   - Representative information: 24 hours
-  - District mappings: 7 days
+  - District mappings (address/zip code to district): 7 days
 - **FR-2.1.3**: System shall implement cache invalidation strategies
 - **FR-2.1.4**: System shall support manual cache refresh via administrative endpoint (post-MVP)
 
@@ -101,11 +104,11 @@ Detailed implementation instructions are documented in [design-research.md](desi
 ### 4. User-Facing Features
 
 #### 4.1 Easy Representative Discovery
-- **FR-4.1.1**: Users shall be able to find representatives by entering their zip code
+- **FR-4.1.1**: Users shall be able to find representatives by entering their address or zip code
 - **FR-4.1.2**: Users shall receive a categorized list of all their representatives
 - **FR-4.1.3**: Users shall see representative contact information clearly displayed
 - **FR-4.1.4**: Users shall understand what each representative's jurisdiction covers
-- **FR-4.1.5**: Response time shall be under 3 seconds for zip code lookups
+- **FR-4.1.5**: Response time shall be under 3 seconds for address or zip code lookups
 
 #### 4.2 Representative Contact Information
 - **FR-4.2.1**: Users shall access email addresses for each representative
@@ -182,12 +185,13 @@ Detailed implementation instructions are documented in [design-research.md](desi
 
 #### 10.1 RESTful API Design
 - **FR-10.1.1**: MVP API endpoints:
+  - `GET /api/representatives?address={address}` - Get representatives by address
   - `GET /api/representatives?zip={zipcode}` - Get representatives by zip code
   - `GET /api/health` - Health check endpoint
 - **FR-10.1.2**: API shall return appropriate HTTP status codes:
   - 200 OK - Successful request
-  - 400 Bad Request - Invalid zip code
-  - 404 Not Found - No data available for zip code
+  - 400 Bad Request - Invalid address or zip code
+  - 404 Not Found - No data available for address or zip code
   - 500 Internal Server Error - System or upstream API failure
   - 503 Service Unavailable - Upstream API unavailable
 - **FR-10.1.3**: API shall return structured JSON responses
@@ -257,11 +261,11 @@ Detailed implementation instructions are documented in [design-research.md](desi
 ## Success Criteria
 
 ### MVP Success Criteria
-1. Users can find their representatives by entering a zip code
+1. Users can find their representatives by entering an address or zip code
 2. Users can view contact information for all their representatives (name, office, party, contact info)
-3. System successfully integrates with at least one government API (e.g., Google Civic Information API)
+3. System successfully integrates with selected government API (OpenStates.org or Washington state API)
 4. API responses return within 3 seconds with caching
-5. System handles errors gracefully (invalid zip codes, API failures)
+5. System handles errors gracefully (invalid addresses or zip codes, API failures)
 6. Application is deployed and accessible via AWS infrastructure
 7. All core features have test coverage above 80%
 

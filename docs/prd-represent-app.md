@@ -6,7 +6,7 @@ Represent App is a serverless application designed to bridge the gap between pol
 
 **Problem Statement**: Citizens lack easy access to comprehensive information about their political representatives. Finding contact information, understanding jurisdictions, and tracking representatives' actions requires navigating multiple government websites and dense legal language.
 
-**Solution**: A location-based web application that allows users to enter their zip code and instantly view all their representatives (federal, state, and local) with clear contact information, voting records, and plain-language summaries of political activities.
+**Solution**: A location-based web application that allows users to enter their address or zip code and instantly view all their representatives (federal, state, and local) with clear contact information, voting records, and plain-language summaries of political activities.
 
 **Target Users**: 
 - Everyday citizens who want to engage with their representatives
@@ -29,7 +29,9 @@ Represent App is a serverless application designed to bridge the gap between pol
 ### Core Features
 
 **Location-Based Representative Lookup**
+- Accept address input via REST API endpoint: `GET /api/representatives?address={address}`
 - Accept zip code input via REST API endpoint: `GET /api/representatives?zip={zipcode}`
+- Validate address format and completeness
 - Validate zip code format (5-digit or 9-digit)
 - Return all representatives for that location (federal, state, local)
 - Categorize representatives by government level (federal, state, county, local)
@@ -43,15 +45,16 @@ Represent App is a serverless application designed to bridge the gap between pol
 - Government level and jurisdiction
 - Data freshness timestamp
 
-**Google Civic Information API Integration**
-- Primary data source for representative lookups
+**Government API Integration**
+- Primary data source for representative lookups (API selected after research)
+- Candidates: OpenStates.org API or Washington state-specific APIs
 - Error handling for API failures (rate limits, timeouts, invalid responses)
 - Retry logic with exponential backoff
 - Graceful degradation when API is unavailable
 
-**OCD Division ID Parsing**
-- Parse Open Civic Data division IDs from API responses
-- Categorize into government levels using regex patterns:
+**Government Level Categorization**
+- Parse division identifiers from API responses (format depends on selected API)
+- Categorize into government levels:
   - Federal (President, Senators, House Representatives)
   - State (Governor, State Senators, State Representatives)
   - County (County Commissioners)
@@ -76,7 +79,7 @@ Represent App is a serverless application designed to bridge the gap between pol
 **DynamoDB Schema**
 - Table: `RepresentativesTable`
 - Primary key: `TENANT#{state_code}` (PK), `REP#{rep_id}` (SK)
-- Global Secondary Index: `ZipCodeIndex` for zip code lookups
+- Global Secondary Index: `LocationIndex` for address and zip code lookups
 - TTL attribute for automatic cache expiration
 - Support for multi-tenant data isolation
 
@@ -114,32 +117,38 @@ Represent App is a serverless application designed to bridge the gap between pol
 
 **Execute in this order** (see [design-research.md](design-research.md) for details):
 
-1. **Google Civic Information API Integration**
+1. **Research and Select Government API**
+   - Analyze GitHub projects using OpenStates.org API
+   - Analyze projects using Washington state-specific APIs
+   - Document integration patterns, data models, and best practices
+   - Select primary API with justification
+
+2. **Implement Selected API Integration**
    - Register API key and store in AWS Systems Manager Parameter Store
    - Implement API request handling in Lambda
    - Add error handling and retry logic with exponential backoff
    - Transform API response to internal data model
 
-2. **DynamoDB Schema Design & Implementation**
+3. **DynamoDB Schema Design & Implementation**
    - Create multi-tenant table structure with state-based partitions
-   - Implement Global Secondary Index for zip code lookups
+   - Implement Global Secondary Index for address and zip code lookups
    - Configure TTL for 24-hour cache expiration
    - Update RepresentativeStore with query methods
 
-3. **OCD Division ID Parsing**
-   - Create `backend/src/utils/ocd_parser.py` utility module
-   - Implement regex patterns for each government level
+4. **Government Level Categorization**
+   - Create categorization utility module (approach depends on selected API)
+   - Implement parsing logic for government levels
    - Add `government_level` field to Representative model
    - Support filtering by government level
 
-4. **Multi-Layer Caching Strategy**
+5. **Multi-Layer Caching Strategy**
    - Implement Lambda memory cache with `functools.lru_cache`
    - Add DynamoDB persistent cache with 24-hour TTL
    - Implement cache hit/miss logging
    - Add CloudWatch metrics for monitoring
    - Implement fallback logic for service failures
 
-5. **Comprehensive Testing & Validation**
+6. **Comprehensive Testing & Validation**
    - Unit tests for all new components
    - Integration tests for end-to-end API flow
    - Performance validation (<3s cache miss, <500ms hit)
@@ -154,7 +163,7 @@ Represent App is a serverless application designed to bridge the gap between pol
 **Frontend Application**
 - React-based single-page application (SPA)
 - Material UI component library
-- Zip code input form with validation
+- Address and zip code input form with validation
 - Representative cards grouped by government level
 - Responsive design for mobile, tablet, desktop
 - Accessible UI (WCAG AA compliance)
@@ -270,11 +279,11 @@ Represent App is a serverless application designed to bridge the gap between pol
 ## Success Metrics
 
 ### MVP Success Criteria
-1. Users can find representatives by entering a zip code
+1. Users can find representatives by entering an address or zip code
 2. API responses return within 3 seconds (cache miss) and 500ms (cache hit)
 3. Cache hit rate exceeds 80% after warmup period
-4. System successfully integrates with Google Civic Information API
-5. System handles errors gracefully (invalid zip codes, API failures)
+4. System successfully integrates with selected government API (OpenStates.org or Washington state)
+5. System handles errors gracefully (invalid addresses or zip codes, API failures)
 6. Data is correctly categorized by government level
 7. Application is deployed and accessible via AWS infrastructure
 8. All core features have test coverage above 80%
@@ -320,9 +329,9 @@ Represent App is a serverless application designed to bridge the gap between pol
 - **Deployment**: S3 + CloudFront
 
 ### External APIs
-- **Google Civic Information API** (MVP - primary data source)
+- **OpenStates.org API** (MVP candidate - primary data source)
+- **Washington State Legislature API** (MVP candidate - primary data source)
 - **ProPublica Congress API** (Post-MVP - voting records)
-- **OpenStates API** (Post-MVP - state legislature)
 - **unitedstates/images GitHub** (Post-MVP - photos)
 
 ### AWS Services
@@ -348,17 +357,18 @@ Represent App is a serverless application designed to bridge the gap between pol
 - Documentation structure
 
 ### Phase 2: Design Research Implementation (🔲 Current)
-1. Google Civic Information API integration
-2. DynamoDB schema for representative data
-3. OCD division ID parsing
-4. Multi-layer caching strategy
-5. Comprehensive testing
+1. Research and select government API (OpenStates.org or Washington state)
+2. Implement selected API integration
+3. DynamoDB schema for representative data
+4. Government level categorization
+5. Multi-layer caching strategy
+6. Comprehensive testing
 
 Reference: [design-research.md](design-research.md)
 
 ### Phase 3: Frontend Development (🔲 Future)
 - React application setup
-- Zip code input component
+- Address and zip code input component
 - Representative display components
 - Responsive design implementation
 - CORS configuration
@@ -400,7 +410,7 @@ Reference: [graphQL_implementation.md](graphQL_implementation.md)
    - **Mitigation**: Provisioned concurrency for production, memory optimization
 3. **Data Freshness**: Cached data may become stale
    - **Mitigation**: 24-hour TTL, manual refresh capability
-4. **Zip Code Complexity**: Some zip codes span multiple districts
+4. **Location Complexity**: Some addresses and zip codes span multiple districts
    - **Mitigation**: Return all relevant representatives, clearly indicate jurisdictions
 5. **Multi-Tenant Isolation**: Tenant isolation mode is new AWS feature
    - **Mitigation**: Comprehensive testing, fallback to standard Lambda if needed

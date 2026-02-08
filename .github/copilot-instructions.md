@@ -16,7 +16,7 @@ Represent App is a full-stack serverless application designed to bridge the gap 
 - **API**: HTTP API Gateway v2 for RESTful endpoints
 - **Database**: DynamoDB with multi-tenancy support
 - **Infrastructure**: AWS CDK for Infrastructure as Code
-- **Location Services**: Zip code-based queries for finding representatives
+- **Location Services**: Address and zip code-based queries for finding representatives
 
 **Technology Stack:**
 - Backend: Python 3.9, AWS Lambda Powertools, pytest
@@ -185,7 +185,7 @@ This project uses specialized agents for specific tasks:
 
 **Example:**
 ```
-@tdd-developer Write tests for the zip code validation endpoint
+@tdd-developer Write tests for the address and zip code validation endpoint
 @tdd-developer Implement the representative lookup using TDD
 ```
 

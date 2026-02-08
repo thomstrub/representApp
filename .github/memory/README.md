@@ -135,7 +135,7 @@ Implement zip code validation endpoint
 ## Approach
 - Write tests first (TDD)
 - Use Google Civic API format validation
-- Return 400 for invalid zip codes
+- Return 400 for invalid address or zip codes
 ```
 
 **During Development:**

@@ -15,7 +15,7 @@ The following patterns were identified as valuable implementations from producti
 ### Priority: High (MVP)
 
 ### Objective
-Integrate Google Civic Information API as the primary data source for representative lookups based on user location (zip code or address).
+Integrate Google Civic Information API as the primary data source for representative lookups based on user location (address or zip code).
 
 ### Implementation Steps
 

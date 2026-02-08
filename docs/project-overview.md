@@ -32,7 +32,7 @@ The application follows a serverless architecture pattern:
 - **Lambda Functions**: Python 3.9 handlers using AWS Lambda Powertools
 - **DynamoDB**: NoSQL database for data persistence with multi-tenancy support
 - **Infrastructure**: AWS CDK for Infrastructure as Code
-- **Location Services**: Location-based queries (zip code) for finding representatives
+- **Location Services**: Address and zip code-based queries for finding representatives
 
 ### Key Design Principles
 
@@ -210,6 +210,7 @@ representApp/
 ## API Endpoints
 
 ### MVP Endpoints
+- `GET /api/representatives?address={address}` - Get representatives for an address
 - `GET /api/representatives?zip={zipcode}` - Get representatives for a zip code
 - `GET /api/health` - Health check endpoint
 
@@ -249,23 +250,27 @@ make help
 See [docs/design-research.md](design-research.md) for detailed implementation instructions.
 
 **Phase 2 Priorities** (Execute in Order):
-1. 🔲 Implement Google Civic Information API Integration
+1. 🔲 Research and Select Government API
+   - Analyze GitHub projects using OpenStates.org API
+   - Analyze projects using Washington state-specific APIs
+   - Document findings and select primary API
+2. 🔲 Implement Selected API Integration
    - Register API key and store in Parameter Store
    - Add API request handling in Lambda
    - Implement error handling and retry logic
-2. 🔲 Design and Implement DynamoDB Schema
+3. 🔲 Design and Implement DynamoDB Schema
    - Multi-tenant table structure (state-based partitions)
-   - GSI for zip code lookups
+   - GSI for address and zip code lookups
    - TTL configuration for cache expiration
-3. 🔲 Implement OCD Division ID Parsing
-   - Create utility module with regex patterns
+4. 🔲 Implement Government Level Categorization
+   - Create utility module for categorization
    - Add government level categorization
    - Support filtering by level
-4. 🔲 Implement Multi-Layer Caching Strategy
+5. 🔲 Implement Multi-Layer Caching Strategy
    - Lambda memory cache (warm environment)
    - DynamoDB persistent cache (24-hour TTL)
    - Cache metrics and monitoring
-5. 🔲 Add comprehensive tests and validation
+6. 🔲 Add comprehensive tests and validation
    - Unit tests for all components
    - Integration tests for API flow
    - Performance testing (<3s cache miss, <500ms hit)
@@ -277,14 +282,14 @@ See [docs/design-research.md](design-research.md) for detailed implementation in
 ### Upcoming Phases
 
 **Phase 3: Frontend Development**
-7. 🔲 Implement React frontend with zip code input
+7. 🔲 Implement React frontend with address and zip code input
 8. 🔲 Display representatives by government level
 9. 🔲 Add responsive design with Material UI
 
 **Phase 4: Documentation & Deployment**
 10. 🔲 Add API documentation (OpenAPI)
 11. 🔲 Set up monitoring and alarms for API performance
-12. 🔲 Deploy to production and test with real zip codes
+12. 🔲 Deploy to production and test with real addresses and zip codes
 
 ### Post-MVP Features
 
@@ -308,7 +313,7 @@ See [docs/design-research.md](design-research.md) for detailed implementation in
 
 ### Developers
 - As a developer, I want to easily deploy and manage the application infrastructure using code
-- As a developer, my first priority is a backend that provides information based on location (zip code)
+- As a developer, my first priority is a backend that provides information based on location (address or zip code)
 - As a developer, I want a frontend interface to interact with the backend that will evolve into an interactive map-based interface
 2. ✅ Implement CRUD API endpoints
 3. ✅ Create DynamoDB data layer
