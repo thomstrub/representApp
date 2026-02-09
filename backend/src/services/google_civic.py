@@ -78,10 +78,10 @@ class GoogleCivicClient:
         logger.info(f"Looking up divisions for address: {address}")
         tracer.put_annotation(key="address_length", value=len(address))
         
-        # T018: Make API request
-        endpoint = f"{self.base_url}/representatives"
+        # T018: Make API request to divisionsByAddress endpoint
+        endpoint = f"{self.base_url}/divisionsByAddress"
         params = {
-            "query": address,
+            "address": address,
             "key": self.api_key
         }
         
@@ -114,7 +114,12 @@ class GoogleCivicClient:
             
             # Handle other non-200 status codes
             if response.status_code != 200:
-                logger.error(f"Unexpected status code from Google Civic API: {response.status_code}")
+                try:
+                    error_data = response.json()
+                    error_message = error_data.get("error", {}).get("message", "Unknown error")
+                    logger.error(f"Unexpected status code from Google Civic API: {response.status_code}, message: {error_message}")
+                except:
+                    logger.error(f"Unexpected status code from Google Civic API: {response.status_code}, body: {response.text}")
                 raise ApiException(
                     code=ErrorCode.EXTERNAL_SERVICE_ERROR,
                     message=f"Google Civic API returned error: {response.status_code}",

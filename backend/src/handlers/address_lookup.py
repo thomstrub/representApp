@@ -40,7 +40,7 @@ def lambda_handler(event: Dict[str, Any], context: LambdaContext) -> Dict[str, A
         HTTP response with status code, headers, and JSON body
     """
     logger.info("Processing address lookup request")
-    tracer.put_annotation(key="request_id", value=context.request_id)
+    tracer.put_annotation(key="request_id", value=context.aws_request_id)
     
     try:
         # Extract address from query parameters (T057)

@@ -223,9 +223,9 @@ def test_get_representatives_invalid_api_key():
         }
         mock_get.return_value = mock_response
         
-        # Act & Assert
+        # Act & Assert - Use a state division so it actually makes the API call
         with pytest.raises(ApiException) as exc_info:
-            client.get_representatives_by_division("ocd-division/country:us")
+            client.get_representatives_by_division("ocd-division/country:us/state:wa/sldu:43")
         
         assert exc_info.value.code == ErrorCode.EXTERNAL_SERVICE_ERROR
         assert exc_info.value.status_code == 503

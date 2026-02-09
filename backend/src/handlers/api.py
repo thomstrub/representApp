@@ -9,9 +9,9 @@ from aws_lambda_powertools.utilities.data_classes import APIGatewayProxyEventV2
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from aws_lambda_powertools.utilities.parser import parse
 
-from models.domain import Representative
-from models.store import RepresentativeStore
-from models.base import Response, APIError
+from src.models.domain import Representative
+from src.models.store import RepresentativeStore
+from src.models.base import Response, APIError
 
 
 # Configuration

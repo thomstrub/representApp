@@ -15,8 +15,8 @@ os.environ['POWERTOOLS_SERVICE_NAME'] = 'test-represent-api'
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
 
 
-from handlers.api import handler
-from models.domain import Representative
+from src.handlers.api import handler
+from src.models.domain import Representative
 
 
 @mock_aws

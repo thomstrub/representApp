@@ -1,22 +1,51 @@
 """
 Backend infrastructure stack for Represent App
 """
+import aws_cdk as cdk
 from aws_cdk import (
-    core,
     aws_dynamodb as ddb,
     aws_lambda,
     aws_apigatewayv2 as apigw2,
     aws_apigatewayv2_integrations as apigw2_int,
-    aws_logs
+    aws_logs,
+    aws_ssm as ssm,
+    aws_iam as iam
 )
 import os
 
 
-class BackendStack(core.Stack):
+class BackendStack(cdk.Stack):
     """Infrastructure for Represent App Backend"""
     
-    def __init__(self, scope: core.Construct, stack_id: str, env_name: str, **kwargs):
+    def __init__(self, scope: cdk.App, stack_id: str, env_name: str, **kwargs):
         super().__init__(scope, stack_id, **kwargs)
+        
+        # T072-T073: Parameter Store for API Keys
+        # Note: These are placeholder parameters. After deployment, set actual values using AWS CLI:
+        # aws ssm put-parameter --name "/represent-app/google-civic-api-key" \
+        #     --value "YOUR_KEY" --type "SecureString" --overwrite
+        # aws ssm put-parameter --name "/represent-app/openstates-api-key" \
+        #     --value "YOUR_KEY" --type "SecureString" --overwrite
+        
+        # Create String parameters (not SecureString) as CDK v2 doesn't support SecureString in construct
+        # Users will update these to SecureString via AWS CLI after deployment
+        google_civic_param = ssm.StringParameter(
+            self,
+            f"{stack_id}-GoogleCivicApiKey",
+            parameter_name="/represent-app/google-civic-api-key",
+            description="Google Civic Information API key for address-to-OCD-ID conversion",
+            string_value="PLACEHOLDER_SET_VIA_CLI",  # Placeholder - set actual value via CLI
+            tier=ssm.ParameterTier.STANDARD
+        )
+        
+        openstates_param = ssm.StringParameter(
+            self,
+            f"{stack_id}-OpenStatesApiKey",
+            parameter_name="/represent-app/openstates-api-key",
+            description="OpenStates API key for representative data retrieval",
+            string_value="PLACEHOLDER_SET_VIA_CLI",  # Placeholder - set actual value via CLI
+            tier=ssm.ParameterTier.STANDARD
+        )
         
         # DynamoDB Table
         table = ddb.Table(
@@ -27,8 +56,17 @@ class BackendStack(core.Stack):
                 type=ddb.AttributeType.STRING
             ),
             billing_mode=ddb.BillingMode.PAY_PER_REQUEST,
-            removal_policy=core.RemovalPolicy.DESTROY if env_name == 'dev' else core.RemovalPolicy.RETAIN,
+            removal_policy=cdk.RemovalPolicy.DESTROY if env_name == 'dev' else cdk.RemovalPolicy.RETAIN,
             stream=ddb.StreamViewType.NEW_AND_OLD_IMAGES  # Enable streams for future event handling
+        )
+        
+        # Lambda Layer with dependencies
+        dependencies_layer = aws_lambda.LayerVersion(
+            self,
+            f"{stack_id}-DependenciesLayer",
+            code=aws_lambda.Code.from_asset("../backend/layers"),
+            compatible_runtimes=[aws_lambda.Runtime.PYTHON_3_9],
+            description="Python dependencies for Represent App API"
         )
         
         # Lambda Function with Tenant Isolation
@@ -37,9 +75,10 @@ class BackendStack(core.Stack):
             self,
             f"{stack_id}-ApiHandler",
             runtime=aws_lambda.Runtime.PYTHON_3_9,
-            handler="handlers.api.handler",
-            code=aws_lambda.Code.from_asset("../backend/src"),
-            timeout=core.Duration.seconds(30),
+            handler="src.handlers.address_lookup.lambda_handler",
+            code=aws_lambda.Code.from_asset("../backend"),
+            layers=[dependencies_layer],
+            timeout=cdk.Duration.seconds(30),
             memory_size=512,
             environment={
                 "DDB_TABLE_NAME": table.table_name,
@@ -51,16 +90,23 @@ class BackendStack(core.Stack):
             tracing=aws_lambda.Tracing.ACTIVE  # Enable X-Ray tracing
         )
         
-        # Enable tenant isolation mode for multi-tenant support
-        # Note: This must be set at creation time and cannot be changed later
-        cfn_function = api_lambda.node.default_child
-        cfn_function.add_property_override(
-            "TenancyConfig",
-            {"TenantIsolationMode": "PER_TENANT"}
-        )
-        
         # Grant Lambda permissions to DynamoDB
         table.grant_read_write_data(api_lambda)
+        
+        # T074-T075: Grant Lambda permissions to Parameter Store
+        google_civic_param.grant_read(api_lambda)
+        openstates_param.grant_read(api_lambda)
+        
+        # Additional IAM permissions for Parameter Store operations
+        api_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "ssm:DescribeParameters"
+                ],
+                resources=["*"]  # DescribeParameters requires wildcard
+            )
+        )
         
         # HTTP API Gateway
         http_api = apigw2.HttpApi(
@@ -74,15 +120,10 @@ class BackendStack(core.Stack):
             )
         )
         
-        # Lambda Integration with Tenant ID header mapping
-        # Maps x-tenant-id from client request to X-Amz-Tenant-Id for Lambda
+        # Lambda Integration
         integration = apigw2_int.HttpLambdaIntegration(
             f"{stack_id}-Integration",
-            api_lambda,
-            parameter_mapping=apigw2.ParameterMapping().append_header(
-                "X-Amz-Tenant-Id",
-                apigw2.MappingValue.request_header("x-tenant-id")
-            )
+            api_lambda
         )
         
         # Add routes
@@ -107,21 +148,21 @@ class BackendStack(core.Stack):
         )
         
         # Outputs
-        core.CfnOutput(
+        cdk.CfnOutput(
             self,
             "ApiUrl",
             value=http_api.url,
             description="HTTP API Gateway URL"
         )
         
-        core.CfnOutput(
+        cdk.CfnOutput(
             self,
             "TableName",
             value=table.table_name,
             description="DynamoDB Table Name"
         )
         
-        core.CfnOutput(
+        cdk.CfnOutput(
             self,
             "LambdaArn",
             value=api_lambda.function_arn,

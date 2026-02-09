@@ -61,7 +61,7 @@ def test_lookup_divisions_success():
         mock_get.assert_called_once()
         call_args = mock_get.call_args
         assert 'params' in call_args.kwargs
-        assert call_args.kwargs['params']['query'] == "1600 Pennsylvania Ave NW, Washington, DC 20500"
+        assert call_args.kwargs['params']['address'] == "1600 Pennsylvania Ave NW, Washington, DC 20500"
         assert call_args.kwargs['params']['key'] == "test-key"
 
 

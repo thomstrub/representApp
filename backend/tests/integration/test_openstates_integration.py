@@ -163,36 +163,37 @@ def test_multiple_divisions_workflow():
     
     client = OpenStatesClient(api_key="test-key")
     
-    # Mock different responses for different divisions
+    # Mock different responses for different divisions (keyed by state code)
+    # Note: OpenStates only tracks state legislators, federal divisions are skipped
     responses = {
-        "ocd-division/country:us": {
-            "results": [
-                {
-                    "id": "ocd-person/pres-001",
-                    "name": "President Example",
-                    "current_role": {
-                        "title": "President",
-                        "district": "US",
-                        "division_id": "ocd-division/country:us"
-                    },
-                    "party": [{"name": "Independent"}],
-                    "jurisdiction": {"name": "United States"}
-                }
-            ],
-            "pagination": {"total_items": 1}
-        },
-        "ocd-division/country:us/state:wa": {
+        "wa": {
             "results": [
                 {
                     "id": "ocd-person/sen-001",
                     "name": "Senator Example",
                     "current_role": {
-                        "title": "US Senator",
-                        "district": "WA",
-                        "division_id": "ocd-division/country:us/state:wa"
+                        "title": "State Senator",
+                        "district": "43",
+                        "division_id": "ocd-division/country:us/state:wa/sldu:43"
                     },
                     "party": [{"name": "Democratic"}],
                     "jurisdiction": {"name": "Washington"}
+                }
+            ],
+            "pagination": {"total_items": 1}
+        },
+        "ca": {
+            "results": [
+                {
+                    "id": "ocd-person/asm-001",
+                    "name": "Assembly Member Example",
+                    "current_role": {
+                        "title": "Assembly Member",
+                        "district": "15",
+                        "division_id": "ocd-division/country:us/state:ca/sldl:15"
+                    },
+                    "party": [{"name": "Democratic"}],
+                    "jurisdiction": {"name": "California"}
                 }
             ],
             "pagination": {"total_items": 1}
@@ -202,32 +203,35 @@ def test_multiple_divisions_workflow():
     def mock_get_side_effect(*args, **kwargs):
         """Return different responses based on URL params"""
         params = kwargs.get('params', {})
-        division_id = params.get('division_id', '')
+        jurisdiction = params.get('jurisdiction', '')
         
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = responses.get(
-            division_id,
+            jurisdiction,
             {"results": [], "pagination": {"total_items": 0}}
         )
         return mock_response
     
     with patch('requests.get', side_effect=mock_get_side_effect):
-        # Query multiple divisions
+# Query multiple divisions (including federal which will be skipped)
         divisions = [
-            "ocd-division/country:us",
-            "ocd-division/country:us/state:wa"
+            "ocd-division/country:us",  # Federal - will be skipped
+            "ocd-division/country:us/state:wa/sldu:43",  # State - will query
+            "ocd-division/country:us/state:ca/sldl:15"  # State - will query
         ]
-        
+
         all_representatives = []
         for division_id in divisions:
             reps = client.get_representatives_by_division(division_id)
             all_representatives.extend(reps)
-        
-        # Assert we got representatives from both queries
+
+        # Assert we got representatives from both state queries (federal was skipped)
         assert len(all_representatives) == 2
+        assert all_representatives[0]['name'] == "Senator Example"
+        assert all_representatives[1]['name'] == "Assembly Member Example"
         
-        # Verify distinct representatives
+        # Verify distinct representatives (no President since federal was skipped)
         rep_ids = [rep['id'] for rep in all_representatives]
-        assert "ocd-person/pres-001" in rep_ids
         assert "ocd-person/sen-001" in rep_ids
+        assert "ocd-person/asm-001" in rep_ids

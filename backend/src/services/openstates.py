@@ -12,7 +12,7 @@ from typing import List, Dict, Any
 from aws_lambda_powertools import Logger, Tracer
 
 from src.utils.errors import ApiException, ErrorCode
-from src.utils.ocd_parser import parse_government_level
+from src.utils.ocd_parser import parse_government_level, parse_ocd_id
 
 logger = Logger(service="openstates_client")
 tracer = Tracer(service="openstates_client")
@@ -71,6 +71,32 @@ class OpenStatesClient:
         logger.info(f"Looking up representatives for division: {ocd_id}")
         tracer.put_annotation(key="ocd_id", value=ocd_id)
         
+        # OpenStates only tracks state legislators, not federal or local
+        # We need to extract the state code and only query for state-level divisions
+        try:
+            parsed = parse_ocd_id(ocd_id)
+            state_code = parsed.get('state')
+            govt_level = parsed.get('government_level')
+            
+            # OpenStates only has state legislators
+            if govt_level != 'state':
+                logger.info(f"Skipping non-state division for OpenStates: {ocd_id} (level: {govt_level})")
+                tracer.put_annotation(key="representative_count", value=0)
+                return []
+            
+            if not state_code:
+                logger.warning(f"Could not extract state code from OCD-ID: {ocd_id}")
+                tracer.put_annotation(key="representative_count", value=0)
+                return []
+            
+            jurisdiction = state_code  # Use state abbreviation (e.g., 'wa')
+            logger.info(f"Querying OpenStates with jurisdiction: {jurisdiction}")
+            
+        except ValueError as e:
+            logger.warning(f"Invalid OCD-ID format: {ocd_id} - {str(e)}")
+            tracer.put_annotation(key="representative_count", value=0)
+            return []
+        
         # T033: Make API request
         endpoint = f"{self.base_url}/people"
         headers = {
@@ -78,8 +104,8 @@ class OpenStatesClient:
             'Accept': 'application/json'
         }
         params = {
-            'division_id': ocd_id,
-            'per_page': 100  # Max results per page
+            'jurisdiction': jurisdiction,
+            'per_page': 50  # OpenStates API max is 50
         }
         
         try:
