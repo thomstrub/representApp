@@ -5,6 +5,12 @@ aws-lambda-powertools[pydantic]==2.30.0
 boto3>=1.34.0
 botocore>=1.34.0
 
+# AWS X-Ray SDK for tracing
+aws-xray-sdk>=2.12.0
+
+# HTTP Client for External APIs
+requests>=2.31.0
+
 # DynamoDB JSON utilities
 dynamodb-json>=1.3
 

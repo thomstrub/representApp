@@ -3,10 +3,10 @@
 CDK App for Represent App Infrastructure
 """
 import os
-from aws_cdk import core
+import aws_cdk as cdk
 from stacks.backend_stack import BackendStack
 
-app = core.App()
+app = cdk.App()
 
 # Get environment configuration
 env_name = os.getenv('ENVIRONMENT', 'dev')
@@ -17,7 +17,7 @@ aws_region = os.getenv('CDK_DEFAULT_REGION', 'us-east-1')
 BackendStack(
     app,
     f"RepresentApp-{env_name}",
-    env=core.Environment(account=aws_account, region=aws_region),
+    env=cdk.Environment(account=aws_account, region=aws_region),
     env_name=env_name
 )
 

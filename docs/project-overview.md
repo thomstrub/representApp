@@ -12,44 +12,55 @@ Represent App is a full-stack serverless application for managing information ab
 
 The application follows a serverless architecture pattern:
 
+**MVP Architecture (Phase 2):**
 ```
-┌─────────────┐         ┌──────────────┐         ┌─────────────┐
-│   React     │────────▶│  API Gateway │────────▶│   Lambda    │
-│  Frontend   │         │   (HTTP v2)  │         │   Handler   │
-└─────────────┘         └──────────────┘         └──────┬──────┘
+┌─────────────┐         ┌──────────────┐         ┌─────────────┐         ┌──────────────┐
+│   React     │────────▶│  API Gateway │────────▶│   Lambda    │────────▶│ Government   │
+│  Frontend   │         │   (HTTP v2)  │         │   Handler   │         │     API      │
+└─────────────┘         └──────────────┘         └─────────────┘         └──────────────┘
+```
+
+**Post-MVP Architecture (Phase 4+):**
+```
+┌─────────────┐         ┌──────────────┐         ┌─────────────┐         ┌──────────────┐
+│   React     │────────▶│  API Gateway │────────▶│   Lambda    │────────▶│ Government   │
+│  Frontend   │         │   (HTTP v2)  │         │   Handler   │         │     API      │
+└─────────────┘         └──────────────┘         └──────┬──────┘         └──────────────┘
                                                          │
                                                          ▼
                                                   ┌─────────────┐
                                                   │  DynamoDB   │
-                                                  │    Table    │
+                                                  │ (Caching)   │
                                                   └─────────────┘
 ```
 
 ### Components
 
-- **Frontend**: React-based SPA with map-based interface (future) served via S3/CloudFront
+**MVP (Phase 2):**
+- **Frontend**: React-based SPA with Material UI (future - Phase 3)
 - **API Gateway**: HTTP API v2 for RESTful endpoints
 - **Lambda Functions**: Python 3.9 handlers using AWS Lambda Powertools
-- **DynamoDB**: NoSQL database for data persistence with multi-tenancy support
+- **Government API**: OpenStates.org or Washington state API for representative data
 - **Infrastructure**: AWS CDK for Infrastructure as Code
 - **Location Services**: Address and zip code-based queries for finding representatives
 
+**Post-MVP (Phase 4+):**
+- **DynamoDB**: NoSQL database for caching and data persistence
+- **Multi-tenancy**: State/county-based tenant isolation for cached data
+
 ### Key Design Principles
 
-- **Location-Based**: Uses location data to help users find their representatives and relevant issues
-- **Multi-Tenancy**: Leverages AWS Lambda's tenant isolation mode for secure state/county data separation
-  - Each state or county operates as an isolated tenant
-  - Execution environments are never shared across tenants
-  - Tenant-specific data cached in memory remains isolated
-  - Simplified architecture compared to function-per-state approach
-- **Data Aggregation**: Backend system aggregates and analyzes political data from multiple sources
+- **Location-Based**: Uses location data (address or zip code) to help users find their representatives
+- **API-First**: MVP focuses on integrating government APIs (OpenStates.org or Washington state) to fetch representative data
+- **Simple & Fast**: Direct API calls without persistent storage in MVP for rapid development
+- **Extensible**: Architecture designed to add caching (DynamoDB) and multi-tenancy in post-MVP phases
 - **Accessibility**: Makes political information easily digestible without dense legal language
 
-### Multi-Tenant Architecture
+### Multi-Tenant Architecture (Post-MVP - Phase 4)
 
-The application uses AWS Lambda's new tenant isolation mode (announced November 2025) to achieve secure multi-tenancy:
+When caching is implemented in Phase 4, the application will use AWS Lambda's tenant isolation mode (announced November 2025) to achieve secure multi-tenancy:
 
-- **Tenant Model**: Each state or county is treated as a separate tenant
+- **Tenant Model**: Each state or county will be treated as a separate tenant
 - **Compute Isolation**: Lambda automatically isolates execution environments per tenant
 - **Performance**: Maintains warm execution environment benefits while ensuring isolation
 - **Security**: Prevents cross-tenant data access without custom isolation logic
@@ -59,6 +70,8 @@ This approach eliminates the need for:
 - Separate Lambda functions per state/county
 - Custom tenant isolation frameworks
 - Complex operational management of thousands of functions
+
+**MVP Note**: Multi-tenancy is not required for MVP as we're not implementing caching or persistent storage yet.
 
 ## Technology Stack
 
@@ -78,13 +91,10 @@ This approach eliminates the need for:
   - Event parsing and validation (Pydantic)
   - X-Ray tracing
 - **API**: HTTP API Gateway v2 with Lambda proxy integration
-- **Database**: DynamoDB with on-demand billing
+- **Government APIs**: OpenStates.org or Washington state API integration
 - **Infrastructure**: AWS CDK (Python)
 - **Testing**: pytest, moto, pytest-cov
-- **Multi-Tenancy**: Lambda tenant isolation mode
-  - Per-tenant execution environment isolation
-  - Tenant ID passed via `X-Amz-Tenant-Id` header
-  - State/county identifiers used as tenant IDs
+- **Post-MVP**: DynamoDB for caching, Lambda tenant isolation mode for multi-tenancy
 
 ### AWS Services
 
@@ -175,9 +185,8 @@ cdk deploy
 ```
 
 This will create:
-- DynamoDB table
 - Lambda function
-- API Gateway
+- API Gateway (HTTP v2)
 - CloudWatch log groups
 - All necessary IAM roles and permissions
 
@@ -185,7 +194,6 @@ This will create:
 
 After deployment, note the following outputs:
 - **ApiUrl**: The HTTP API Gateway endpoint
-- **TableName**: The DynamoDB table name
 - **LambdaArn**: The Lambda function ARN
 
 ## Project Structure
@@ -243,7 +251,7 @@ make help
 
 ## Next Steps
 
-### Current Phase - Phase 2: Design Research Implementation
+### Current Phase - Phase 2: Design Research and Implementation
 
 **Goal**: Implement patterns and approaches from analyzed civic tech repositories to build MVP functionality.
 
@@ -258,22 +266,14 @@ See [docs/design-research.md](design-research.md) for detailed implementation in
    - Register API key and store in Parameter Store
    - Add API request handling in Lambda
    - Implement error handling and retry logic
-3. 🔲 Design and Implement DynamoDB Schema
-   - Multi-tenant table structure (state-based partitions)
-   - GSI for address and zip code lookups
-   - TTL configuration for cache expiration
-4. 🔲 Implement Government Level Categorization
+3. 🔲 Implement Government Level Categorization
    - Create utility module for categorization
-   - Add government level categorization
+   - Add government level categorization (federal, state, local)
    - Support filtering by level
-5. 🔲 Implement Multi-Layer Caching Strategy
-   - Lambda memory cache (warm environment)
-   - DynamoDB persistent cache (24-hour TTL)
-   - Cache metrics and monitoring
-6. 🔲 Add comprehensive tests and validation
+4. 🔲 Add comprehensive tests and validation
    - Unit tests for all components
-   - Integration tests for API flow
-   - Performance testing (<3s cache miss, <500ms hit)
+   - Integration tests for API → Government API flow
+   - Validate response times (<3s for API calls)
 
 **Previous Phases**:
 1. ✅ Phase 1: Set up Python Lambda backend with Powertools
@@ -282,22 +282,28 @@ See [docs/design-research.md](design-research.md) for detailed implementation in
 ### Upcoming Phases
 
 **Phase 3: Frontend Development**
-7. 🔲 Implement React frontend with address and zip code input
-8. 🔲 Display representatives by government level
-9. 🔲 Add responsive design with Material UI
+5. 🔲 Implement React frontend with address and zip code input
+6. 🔲 Display representatives by government level
+7. 🔲 Add responsive design with Material UI
 
-**Phase 4: Documentation & Deployment**
-10. 🔲 Add API documentation (OpenAPI)
-11. 🔲 Set up monitoring and alarms for API performance
-12. 🔲 Deploy to production and test with real addresses and zip codes
+**Phase 4: Caching & Multi-Tenancy**
+8. 🔲 Design and implement DynamoDB schema for caching
+9. 🔲 Implement multi-layer caching strategy (Lambda + DynamoDB)
+10. 🔲 Add Lambda tenant isolation mode for multi-tenant caching
+11. 🔲 Performance testing (<500ms cache hits, <3s cache misses)
+
+**Phase 5: Documentation & Production Deployment**
+12. 🔲 Add API documentation (OpenAPI)
+13. 🔲 Set up monitoring and alarms for API performance
+14. 🔲 Deploy to production and test with real addresses and zip codes
 
 ### Post-MVP Features
 
-- Local data storage and CRUD operations for representative information
+- **Phase 4**: DynamoDB caching layer with multi-tenant architecture
+- **Phase 4+**: Map-based interface to visualize political data
+- Map-based zooming that integrates political boundaries with location data
 - Representative voting record tracking (integrate with ProPublica Congress API)
 - Issue tracking and alerts
-- Map-based interface to visualize political data
-- Map-based zooming that integrates political boundaries with location data
 - Advanced search and filtering capabilities
 - User authentication (Cognito)
 - CI/CD pipeline

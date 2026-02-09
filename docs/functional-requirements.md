@@ -4,19 +4,66 @@
 
 This document outlines the functional requirements for Represent App, a serverless application designed to bridge the gap between political infrastructure and constituents' day-to-day lives. The app provides citizens with accessible information about their political representatives by querying existing government APIs based on location, similar to the knowledge and access that lobbyists have.
 
+### Architecture Overview
+
+The application follows a serverless architecture pattern:
+
+**MVP Architecture (Phase 2):**
+```
+┌─────────────┐         ┌──────────────┐         ┌─────────────┐         ┌──────────────┐
+│   React     │────────▶│  API Gateway │────────▶│   Lambda    │────────▶│ Government   │
+│  Frontend   │         │   (HTTP v2)  │         │   Handler   │         │     API      │
+└─────────────┘         └──────────────┘         └─────────────┘         └──────────────┘
+```
+
+**Post-MVP Architecture (Phase 4+):**
+```
+┌─────────────┐         ┌──────────────┐         ┌─────────────┐         ┌──────────────┐
+│   React     │────────▶│  API Gateway │────────▶│   Lambda    │────────▶│ Government   │
+│  Frontend   │         │   (HTTP v2)  │         │   Handler   │         │     API      │
+└─────────────┘         └──────────────┘         └──────┬──────┘         └──────────────┘
+                                                         │
+                                                         ▼
+                                                  ┌─────────────┐
+                                                  │  DynamoDB   │
+                                                  │ (Caching)   │
+                                                  └─────────────┘
+```
+
+**Technology Stack:**
+- **Backend**: Python 3.9, AWS Lambda with Lambda Powertools (structured logging, X-Ray tracing, Pydantic validation)
+- **API**: HTTP API Gateway v2 with Lambda proxy integration
+- **Government APIs**: OpenStates.org or Washington state API for representative data
+- **Infrastructure**: AWS CDK (Python) for Infrastructure as Code
+- **Frontend**: React with Material UI components (Phase 3)
+- **Testing**: pytest, moto, pytest-cov (backend); Jest, React Testing Library (frontend)
+- **Post-MVP**: DynamoDB for caching, Lambda tenant isolation mode for multi-tenancy
+
+**Key Design Principles:**
+- **Location-Based**: Uses address and zip code queries to find representatives
+- **API-First**: MVP focuses on integrating government APIs to fetch representative data
+- **Simple & Fast**: Direct API calls without persistent storage in MVP for rapid development
+- **Extensible**: Architecture designed to add caching and multi-tenancy in post-MVP phases
+- **Accessibility**: Makes political information easily digestible without dense legal language
+
 ### Implementation Approach
 
-The implementation strategy draws from analysis of three production civic tech repositories:
+**Current Phase**: Phase 2 - Design Research and Implementation
+
+The implementation strategy follows the Phase 2 priorities outlined in the project overview:
+
+**Phase 2: Design Research and Implementation** (Execute in Order):
+1. Research and Select Government API (OpenStates.org or Washington state-specific)
+2. Implement Selected API Integration (data source)
+3. Government Level Categorization (federal, state, local)
+4. Add comprehensive tests and validation
+
+The implementation draws from analysis of three production civic tech repositories:
 - **datamade/my-reps**: API integration patterns, OCD division ID parsing
 - **elisabethvirak/Know_Your_Congress**: Data caching strategies, representative data models
 - **nrenner0211/elect.io**: React component patterns, authentication (GraphQL for post-MVP)
 
-Detailed implementation instructions are documented in [design-research.md](design-research.md). The MVP implementation follows this order:
-1. Research and Select Government API (OpenStates.org or Washington state-specific)
-2. Implement Selected API Integration (data source)
-3. DynamoDB Schema Design (multi-tenant storage with caching)
-4. Government Level Categorization (OCD or equivalent)
-5. Multi-Layer Caching Strategy (performance optimization)
+Detailed implementation instructions are documented in [design-research.md](design-research.md).
 
 ## Core Functional Requirements (MVP)
 
@@ -38,10 +85,10 @@ Detailed implementation instructions are documented in [design-research.md](desi
   - ProPublica Congress API (Post-MVP - voting records)
   - Other authoritative government data sources
 - **FR-1.2.3**: System shall handle API rate limits and implement appropriate retry logic
-- **FR-1.2.4**: System shall cache API responses to minimize external API calls and improve performance
-- **FR-1.2.5**: System shall handle API failures gracefully with appropriate error messages
+- **FR-1.2.4**: System shall handle API failures gracefully with appropriate error messages
+- **FR-1.2.5**: Post-MVP: System shall cache API responses in DynamoDB to minimize external API calls
 
-**Implementation Note**: See [design-research.md](design-research.md) for API research and selection process. First step is to analyze GitHub projects using OpenStates.org or Washington state APIs to determine best integration approach.
+**Implementation Note**: Phase 2 Action Item 1 - See [design-research.md](design-research.md) for API research and selection process. Analyze GitHub projects using OpenStates.org or Washington state APIs to determine best integration approach. Once selected, register API key and store in AWS Systems Manager Parameter Store.
 
 #### 1.3 Representative Data Retrieval
 - **FR-1.3.1**: System shall return all representatives relevant to the provided address or zip code (local, state, and federal)
@@ -59,7 +106,7 @@ Detailed implementation instructions are documented in [design-research.md](desi
   - Photo (if available)
 - **FR-1.3.4**: System shall return data in a structured JSON format
 
-**Implementation Note**: See [design-research.md](design-research.md) for government level categorization approach. Categorization method will depend on selected API (OCD Division IDs or equivalent system).
+**Implementation Note**: Phase 2 Action Item 3 - See [design-research.md](design-research.md) for government level categorization approach. Create utility module for categorization logic based on selected API (OCD Division IDs or equivalent system). Support filtering by jurisdiction level.
 
 #### 1.4 Geographic Context
 - **FR-1.4.1**: System shall determine political districts from address or zip code
@@ -69,23 +116,30 @@ Detailed implementation instructions are documented in [design-research.md](desi
   - State legislative districts
   - County and municipality names
 
-### 2. Response Caching and Performance
+### 2. Response Caching and Performance (Post-MVP)
 
-#### 2.1 Cache Management
-- **FR-2.1.1**: System shall cache government API responses to reduce latency and API costs
+#### 2.1 Cache Management (Post-MVP - Phase 4)
+- **FR-2.1.1**: System shall cache government API responses in DynamoDB to reduce latency and API costs
 - **FR-2.1.2**: System shall use appropriate cache TTL (time-to-live) based on data volatility:
   - Representative information: 24 hours
   - District mappings (address/zip code to district): 7 days
 - **FR-2.1.3**: System shall implement cache invalidation strategies
-- **FR-2.1.4**: System shall support manual cache refresh via administrative endpoint (post-MVP)
+- **FR-2.1.4**: System shall support manual cache refresh via administrative endpoint
 
-**Implementation Note**: See [design-research.md](design-research.md) Action Item 5 for multi-layer caching strategy including Lambda memory cache and DynamoDB persistent cache based on analysis of Know_Your_Congress patterns.
+**Implementation Note**: See [design-research.md](design-research.md) for multi-layer caching strategy including:
+- Lambda memory cache (warm execution environment)
+- DynamoDB persistent cache (24-hour TTL for representative data, 7-day TTL for district mappings)
+- Cache metrics and monitoring
+Based on analysis of Know_Your_Congress caching patterns.
 
-#### 2.2 Multi-Tenancy Support
-- **FR-2.2.1**: System shall treat each state or county as a separate tenant for caching purposes
-- **FR-2.2.2**: System shall ensure tenant execution environments are never shared
-- **FR-2.2.3**: System shall isolate tenant-specific cached data in memory
-- **FR-2.2.4**: System shall support different government API sources per state/county as needed
+#### 2.2 Multi-Tenancy Support (Post-MVP - Phase 4)
+- **FR-2.2.1**: System shall treat each state or county as a separate tenant
+- **FR-2.2.2**: System shall use AWS Lambda's tenant isolation mode (announced November 2025) for secure multi-tenancy
+- **FR-2.2.3**: System shall ensure tenant execution environments are never shared across tenants
+- **FR-2.2.4**: System shall isolate tenant-specific cached data in memory per tenant
+- **FR-2.2.5**: System shall pass tenant ID via `X-Amz-Tenant-Id` header using state/county identifiers
+- **FR-2.2.6**: System shall support different government API sources per state/county as needed
+- **FR-2.2.7**: System shall leverage built-in tenant-aware logging with CloudWatch integration
 
 ### 3. Data Transformation and Presentation
 
@@ -125,13 +179,16 @@ Detailed implementation instructions are documented in [design-research.md](desi
 
 ## Post-MVP Functional Requirements
 
-### 5. Representative Data Management (Future)
+### 5. Representative Data Management (Post-MVP - Phase 4)
 
-#### 5.1 Local Data Storage
-- **FR-5.1.1**: System may store frequently accessed representative data locally in DynamoDB
+#### 5.1 Local Data Storage with DynamoDB
+- **FR-5.1.1**: System shall store frequently accessed representative data in DynamoDB
 - **FR-5.1.2**: System shall implement CRUD operations for local data management
 - **FR-5.1.3**: System shall sync local data with authoritative sources periodically
 - **FR-5.1.4**: System shall provide administrative interface for data management
+- **FR-5.1.5**: System shall use multi-tenant table structure with state-based partitions
+- **FR-5.1.6**: System shall implement GSI for address and zip code lookups
+- **FR-5.1.7**: System shall configure TTL for cache expiration
 
 ### 6. Voting Record Tracking (Future)
 
@@ -184,28 +241,36 @@ Detailed implementation instructions are documented in [design-research.md](desi
 ### 10. API Requirements
 
 #### 10.1 RESTful API Design
-- **FR-10.1.1**: MVP API endpoints:
+- **FR-10.1.1**: System shall use HTTP API Gateway v2 with Lambda proxy integration
+- **FR-10.1.2**: MVP API endpoints (Phase 2):
   - `GET /api/representatives?address={address}` - Get representatives by address
   - `GET /api/representatives?zip={zipcode}` - Get representatives by zip code
   - `GET /api/health` - Health check endpoint
-- **FR-10.1.2**: API shall return appropriate HTTP status codes:
+- **FR-10.1.3**: Post-MVP API endpoints (Phase 4+):
+  - `GET /api/representatives/{id}/votes` - Get voting record for a representative
+  - `GET /api/issues` - Get tracked issues
+  - Local data management CRUD endpoints (if needed)
+- **FR-10.1.4**: API shall return appropriate HTTP status codes:
   - 200 OK - Successful request
   - 400 Bad Request - Invalid address or zip code
   - 404 Not Found - No data available for address or zip code
   - 500 Internal Server Error - System or upstream API failure
   - 503 Service Unavailable - Upstream API unavailable
-- **FR-10.1.3**: API shall return structured JSON responses
-- **FR-10.1.4**: API shall support CORS for frontend integration
+- **FR-10.1.5**: API shall return structured JSON responses
+- **FR-10.1.6**: API shall support CORS for frontend integration
+- **FR-10.1.7**: API shall use AWS Lambda Powertools for event parsing and validation with Pydantic
 
 #### 10.2 Error Handling
 - **FR-10.2.1**: System shall return descriptive error messages for all failure scenarios
-- **FR-10.2.2**: System shall log errors with appropriate context for debugging
+- **FR-10.2.2**: System shall use AWS Lambda Powertools structured logging for error context
 - **FR-10.2.3**: System shall handle validation errors gracefully with user-friendly messages
+- **FR-10.2.4**: System shall implement X-Ray tracing for all Lambda invocations
 
 #### 10.3 Performance
-- **FR-10.3.1**: API responses shall return within 3 seconds under normal load
-- **FR-10.3.2**: System shall leverage Lambda execution environment caching for performance
-- **FR-10.3.3**: System shall use DynamoDB efficiently for data retrieval
+- **FR-10.3.1**: MVP: API responses shall return within 3 seconds for direct government API calls
+- **FR-10.3.2**: System shall use AWS Lambda Powertools for optimized event handling
+- **FR-10.3.3**: Post-MVP: System shall achieve <500ms response time for cache hits (DynamoDB)
+- **FR-10.3.4**: Post-MVP: System shall leverage Lambda warm execution environment benefits with tenant isolation
 
 ### 11. Security and Authentication (Future)
 
@@ -222,9 +287,11 @@ Detailed implementation instructions are documented in [design-research.md](desi
 ### 12. Observability and Monitoring
 
 #### 12.1 Logging
-- **FR-12.1.1**: System shall log all API requests with structured logging
-- **FR-12.1.2**: System shall log tenant context for multi-tenant operations
-- **FR-12.1.3**: System shall integrate with AWS CloudWatch for log aggregation
+- **FR-12.1.1**: System shall use AWS Lambda Powertools Logger for structured logging
+- **FR-12.1.2**: System shall log all API requests with correlation IDs
+- **FR-12.1.3**: System shall log tenant context for multi-tenant operations
+- **FR-12.1.4**: System shall integrate with AWS CloudWatch for log aggregation
+- **FR-12.1.5**: System shall leverage built-in tenant-aware logging from Lambda isolation mode
 
 #### 12.2 Tracing
 - **FR-12.2.1**: System shall implement X-Ray tracing for all Lambda invocations
@@ -249,29 +316,42 @@ Detailed implementation instructions are documented in [design-research.md](desi
 - **NFR-14.3**: System shall gracefully degrade when external data sources are unavailable
 
 ### 15. Maintainability
-- **NFR-15.1**: Infrastructure shall be defined as code using AWS CDK
-- **NFR-15.2**: Code shall follow Python best practices and include comprehensive tests
-- **NFR-15.3**: System shall include documentation for all components and APIs
+- **NFR-15.1**: Infrastructure shall be defined as code using AWS CDK (Python)
+- **NFR-15.2**: Backend code shall use Python 3.9 or higher
+- **NFR-15.3**: Code shall follow Python best practices and include comprehensive tests (pytest, moto, pytest-cov)
+- **NFR-15.4**: MVP shall achieve >80% test coverage for API integration and handler logic
+- **NFR-15.5**: System shall include documentation for all components and APIs
 
 ### 16. Accessibility
-- **NFR-16.1**: Frontend shall be accessible to users with disabilities (WCAG AA compliance)
-- **NFR-16.2**: Content shall be readable at various screen sizes (responsive design)
-- **NFR-16.3**: Information shall be presented in clear, plain language
+- **NFR-16.1**: Frontend shall use React with Material UI (MUI) components
+- **NFR-16.2**: Frontend shall be accessible to users with disabilities (WCAG AA compliance)
+- **NFR-16.3**: Content shall be readable at various screen sizes (responsive design)
+- **NFR-16.4**: Information shall be presented in clear, plain language
 
 ## Success Criteria
 
-### MVP Success Criteria
-1. Users can find their representatives by entering an address or zip code
-2. Users can view contact information for all their representatives (name, office, party, contact info)
-3. System successfully integrates with selected government API (OpenStates.org or Washington state API)
-4. API responses return within 3 seconds with caching
-5. System handles errors gracefully (invalid addresses or zip codes, API failures)
-6. Application is deployed and accessible via AWS infrastructure
-7. All core features have test coverage above 80%
+### MVP Success Criteria (Phase 2)
+1. ✅ Python 3.9 Lambda backend with AWS Lambda Powertools is deployed
+2. ✅ CDK infrastructure with HTTP API Gateway v2 and Lambda is operational
+3. 🔲 Government API selected and integrated (OpenStates.org or Washington state API)
+4. 🔲 Users can find their representatives by entering an address or zip code
+5. 🔲 Users can view contact information for all their representatives (name, office, party, contact info)
+6. 🔲 Representatives are categorized by government level (federal, state, local)
+7. 🔲 API responses return within 3 seconds for government API calls
+8. 🔲 System handles errors gracefully (invalid addresses/zip codes, API failures)
+9. 🔲 All core features have test coverage above 80%
+10. ✅ Application is deployed and accessible via AWS infrastructure
 
-### Post-MVP Success Criteria
-1. Users can view voting records for their representatives
-2. Users can track issues that matter to them
-3. Users can interact with map-based visualizations
-4. System aggregates data from multiple authoritative sources
-5. Users report that political information is easier to understand than traditional sources
+### Post-MVP Success Criteria (Phase 3+)
+1. React frontend with Material UI components deployed
+2. DynamoDB caching layer implemented (<500ms cache hits)
+3. Multi-tenant architecture operational with Lambda tenant isolation mode
+4. Users can interact with map-based visualizations
+5. Users can view voting records for their representatives
+6. Users can track issues that matter to them
+7. System aggregates data from multiple authoritative sources
+8. User authentication implemented with AWS Cognito
+9. CI/CD pipeline operational
+10. API documentation published (OpenAPI)
+11. Monitoring and alarms configured for API performance
+12. Users report that political information is easier to understand than traditional sources

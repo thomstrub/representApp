@@ -6,10 +6,9 @@ import os
 import sys
 from pathlib import Path
 
-# Add src directory to Python path
+# Add backend directory to Python path so 'src' module can be imported
 backend_dir = Path(__file__).parent.parent
-src_dir = backend_dir / 'src'
-sys.path.insert(0, str(src_dir))
+sys.path.insert(0, str(backend_dir))
 
 # Set test environment variables
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
