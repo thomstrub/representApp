@@ -9,7 +9,7 @@ import {
   Chip
 } from '@mui/material';
 import { Email, Phone, LocationOn, Language } from '@mui/icons-material';
-import { Representative } from '../types/representative';
+import type { Representative } from '../types/representative';
 
 interface RepresentativeCardProps {
   representative: Representative;

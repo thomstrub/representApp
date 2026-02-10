@@ -1,4 +1,4 @@
-import { ApiErrorResponse } from '../types/api';
+import type { ApiErrorResponse } from '../types/api';
 
 /**
  * Map HTTP status codes and API errors to user-friendly messages

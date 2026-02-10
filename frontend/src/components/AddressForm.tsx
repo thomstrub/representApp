@@ -1,7 +1,8 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { TextField, Button, Box } from '@mui/material';
-import { addressSchema, AddressFormData } from '../types/form';
+import { addressSchema } from '../types/form';
+import type { AddressFormData } from '../types/form';
 
 interface AddressFormProps {
   onSubmit: (data: AddressFormData) => void;

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { AppState } from '../types/state';
-import { ApiSuccessResponse, ApiErrorResponse } from '../types/api';
+import type { AppState } from '../types/state';
+import type { ApiSuccessResponse, ApiErrorResponse } from '../types/api';
 import { getErrorMessage } from '../utils/errors';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;

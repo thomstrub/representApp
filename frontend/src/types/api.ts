@@ -1,4 +1,4 @@
-import { Representative } from './representative';
+import type { Representative } from './representative';
 
 /**
  * Success response from GET /representatives

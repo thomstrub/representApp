@@ -1,5 +1,5 @@
 import { Box, Typography, Grid } from '@mui/material';
-import { Representative } from '../types/representative';
+import type { Representative } from '../types/representative';
 import { RepresentativeCard } from './RepresentativeCard';
 import { groupByGovernmentLevel } from '../utils/grouping';
 

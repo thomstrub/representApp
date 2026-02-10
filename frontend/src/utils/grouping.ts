@@ -1,4 +1,4 @@
-import { Representative } from '../types/representative';
+import type { Representative } from '../types/representative';
 
 /**
  * Representatives grouped by government level

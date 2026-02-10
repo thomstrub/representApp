@@ -1,4 +1,4 @@
-import { Representative } from './representative';
+import type { Representative } from './representative';
 
 /**
  * Application state for representative lookup flow

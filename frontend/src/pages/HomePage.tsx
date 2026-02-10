@@ -3,7 +3,7 @@ import { AddressForm } from '../components/AddressForm';
 import { LoadingIndicator } from '../components/LoadingIndicator';
 import { ResultsDisplay } from '../components/ResultsDisplay';
 import { useRepresentatives } from '../hooks/useRepresentatives';
-import { AddressFormData } from '../types/form';
+import type { AddressFormData } from '../types/form';
 
 export const HomePage = () => {
   const { appState, fetchByAddress } = useRepresentatives();
