@@ -4,6 +4,8 @@ import { LoadingIndicator } from '../components/LoadingIndicator';
 import { ResultsDisplay } from '../components/ResultsDisplay';
 import { useRepresentatives } from '../hooks/useRepresentatives';
 import type { AddressFormData } from '../types/form';
+import type { ApiSuccessResponse } from '../types/api';
+import { groupByGovernmentLevel } from '../utils/grouping';
 
 export const HomePage = () => {
   const { appState, fetchByAddress } = useRepresentatives();
@@ -40,9 +42,21 @@ export const HomePage = () => {
 
       {appState.status === 'loading' && <LoadingIndicator />}
 
-      {appState.status === 'success' && (
-        <ResultsDisplay representatives={appState.data} />
-      )}
+      {appState.status === 'success' && (() => {
+        // If we have metadata and warnings, construct the full API response
+        if (appState.metadata) {
+          const grouped = groupByGovernmentLevel(appState.data);
+          const apiResponse: ApiSuccessResponse = {
+            representatives: grouped,
+            metadata: appState.metadata,
+            warnings: appState.warnings,
+          };
+          return <ResultsDisplay data={apiResponse} />;
+        }
+        
+        // Fallback to legacy format for backward compatibility
+        return <ResultsDisplay representatives={appState.data} />;
+      })()}
     </Container>
   );
 };

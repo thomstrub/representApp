@@ -1,4 +1,5 @@
 import type { Representative } from './representative';
+import type { ApiSuccessResponse } from './api';
 
 /**
  * Application state for representative lookup flow
@@ -6,7 +7,7 @@ import type { Representative } from './representative';
 export type AppState = 
   | { status: 'idle' }
   | { status: 'loading' }
-  | { status: 'success'; data: Representative[] }
+  | { status: 'success'; data: Representative[]; metadata?: ApiSuccessResponse['metadata']; warnings?: string[] }
   | { status: 'error'; message: string };
 
 /**
@@ -20,7 +21,7 @@ export const isLoadingState = (state: AppState): state is { status: 'loading' } 
   return state.status === 'loading';
 };
 
-export const isSuccessState = (state: AppState): state is { status: 'success'; data: Representative[] } => {
+export const isSuccessState = (state: AppState): state is { status: 'success'; data: Representative[]; metadata?: ApiSuccessResponse['metadata']; warnings?: string[] } => {
   return state.status === 'success';
 };
 

@@ -1,18 +1,39 @@
 import type { Representative } from './representative';
 
 /**
+ * Representatives grouped by government level
+ */
+export interface GovernmentLevelGroup {
+  federal: Representative[];
+  state: Representative[];
+  local: Representative[];
+}
+
+/**
+ * Geographic coordinates
+ */
+export interface Coordinates {
+  latitude: number;
+  longitude: number;
+}
+
+/**
+ * Search metadata with context and statistics
+ */
+export interface Metadata {
+  address: string;
+  coordinates?: Coordinates;
+  total_count: number;
+  government_levels: string[];
+  response_time_ms?: number;
+}
+
+/**
  * Success response from GET /representatives
  */
 export interface ApiSuccessResponse {
-  address: string;  // Top-level address field returned by backend
-  representatives: Representative[];
-  metadata: {
-    address: string;
-    division_count: number;
-    representative_count: number;
-    government_levels: string[];
-    response_time_ms?: number;
-  };
+  representatives: GovernmentLevelGroup;  // Nested structure
+  metadata: Metadata;
   warnings?: string[];
 }
 

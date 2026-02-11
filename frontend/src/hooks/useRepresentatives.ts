@@ -20,14 +20,26 @@ export const useRepresentatives = () => {
         throw new Error(getErrorMessage(response.status, errorData));
       }
 
-      const data: ApiSuccessResponse = await response.json();
+      const apiResponse: ApiSuccessResponse = await response.json();
       
       // Log warnings if present (for debugging)
-      if (data.warnings) {
-        console.warn('API warnings:', data.warnings);
+      if (apiResponse.warnings) {
+        console.warn('API warnings:', apiResponse.warnings);
       }
 
-      setAppState({ status: 'success', data: data.representatives });
+      // Flatten the nested structure into a single array for backward compatibility
+      const representatives = [
+        ...apiResponse.representatives.federal,
+        ...apiResponse.representatives.state,
+        ...apiResponse.representatives.local,
+      ];
+
+      setAppState({ 
+        status: 'success', 
+        data: representatives,
+        metadata: apiResponse.metadata,
+        warnings: apiResponse.warnings,
+      });
     } catch (error) {
       const message = error instanceof Error 
         ? error.message 

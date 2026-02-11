@@ -12,26 +12,6 @@ describe('AddressLookup Integration', () => {
   });
 
   it('should complete full flow: form submission → loading → results display', async () => {
-    const mockRepresentatives = [
-      {
-        id: '1',
-        name: 'Jane Smith',
-        office: 'US Senator',
-        party: 'Democratic',
-        government_level: 'federal',
-        jurisdiction: 'United States',
-        email: 'senator.smith@senate.gov',
-      },
-      {
-        id: '2',
-        name: 'John Doe',
-        office: 'State Senator',
-        party: 'Republican',
-        government_level: 'state',
-        jurisdiction: 'California',
-      },
-    ];
-
     const mockFetch = vi.mocked(fetch);
     mockFetch.mockImplementationOnce(() => 
       new Promise((resolve) => {
@@ -39,9 +19,33 @@ describe('AddressLookup Integration', () => {
           resolve({
             ok: true,
             json: async () => ({
-              representatives: mockRepresentatives,
+              representatives: {
+                federal: [
+                  {
+                    id: '1',
+                    name: 'Jane Smith',
+                    office: 'US Senator',
+                    party: 'Democratic',
+                    government_level: 'federal',
+                    jurisdiction: 'United States',
+                    email: 'senator.smith@senate.gov',
+                  },
+                ],
+                state: [
+                  {
+                    id: '2',
+                    name: 'John Doe',
+                    office: 'State Senator',
+                    party: 'Republican',
+                    government_level: 'state',
+                    jurisdiction: 'California',
+                  },
+                ],
+                local: [],
+              },
               metadata: {
                 address: '123 Main St, Seattle, WA 98101',
+                total_count: 2,
                 government_levels: ['federal', 'state'],
               },
             }),
@@ -150,18 +154,23 @@ describe('AddressLookup Integration', () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        representatives: [
-          {
-            id: '1',
-            name: 'Jane Smith',
-            office: 'US Senator',
-            party: 'Democratic',
-            government_level: 'federal',
-            jurisdiction: 'United States',
-          },
-        ],
+        representatives: {
+          federal: [
+            {
+              id: '1',
+              name: 'Jane Smith',
+              office: 'US Senator',
+              party: 'Democratic',
+              government_level: 'federal',
+              jurisdiction: 'United States',
+            },
+          ],
+          state: [],
+          local: [],
+        },
         metadata: {
           address: '123 Main St',
+          total_count: 1,
           government_levels: ['federal'],
         },
       }),
@@ -182,18 +191,23 @@ describe('AddressLookup Integration', () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        representatives: [
-          {
-            id: '2',
-            name: 'John Doe',
-            office: 'State Senator',
-            party: 'Republican',
-            government_level: 'state',
-            jurisdiction: 'California',
-          },
-        ],
+        representatives: {
+          federal: [],
+          state: [
+            {
+              id: '2',
+              name: 'John Doe',
+              office: 'State Senator',
+              party: 'Republican',
+              government_level: 'state',
+              jurisdiction: 'California',
+            },
+          ],
+          local: [],
+        },
         metadata: {
           address: '456 Oak Ave',
+          total_count: 1,
           government_levels: ['state'],
         },
       }),
@@ -210,5 +224,162 @@ describe('AddressLookup Integration', () => {
 
     // Old results should be replaced
     expect(screen.queryByText('Jane Smith')).not.toBeInTheDocument();
+  });
+
+  // T007: New integration tests for nested API response structure
+  describe('with nested API response (US1)', () => {
+    it('should display grouped representatives with metadata after search', async () => {
+      const mockResponse = {
+        representatives: {
+          federal: [
+            {
+              id: 'ocd-1',
+              name: 'Federal Rep',
+              office: 'Senator',
+              party: 'Democratic',
+              government_level: 'federal',
+              jurisdiction: 'US',
+            },
+          ],
+          state: [],
+          local: [],
+        },
+        metadata: {
+          address: '1600 Pennsylvania Avenue NW, Washington, DC 20500',
+          total_count: 1,
+          government_levels: ['federal'],
+        },
+      };
+
+      const mockFetch = vi.mocked(fetch);
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      } as Response);
+
+      const user = userEvent.setup();
+      render(<HomePage />);
+
+      const input = screen.getByLabelText(/enter your address/i);
+      const button = screen.getByRole('button', { name: /find my representatives/i });
+
+      await user.type(input, '1600 Pennsylvania Avenue NW');
+      await user.click(button);
+
+      await waitFor(() => {
+        expect(screen.getByText('Federal Rep')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText(/1600 Pennsylvania Avenue NW, Washington, DC 20500/)).toBeInTheDocument();
+      expect(screen.getByText(/Found 1 representative/i)).toBeInTheDocument();
+    });
+
+    it('should display warnings when API returns them', async () => {
+      const mockResponse = {
+        representatives: {
+          federal: [],
+          state: [],
+          local: [],
+        },
+        metadata: {
+          address: '123 Main St',
+          total_count: 0,
+          government_levels: [],
+        },
+        warnings: ['Could not find local representatives'],
+      };
+
+      const mockFetch = vi.mocked(fetch);
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      } as Response);
+
+      const user = userEvent.setup();
+      render(<HomePage />);
+
+      const input = screen.getByLabelText(/enter your address/i);
+      const button = screen.getByRole('button', { name: /find my representatives/i });
+
+      await user.type(input, '123 Main St');
+      await user.click(button);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Could not find local representatives/)).toBeInTheDocument();
+      });
+    });
+
+    it('should display multiple government levels correctly', async () => {
+      const mockResponse = {
+        representatives: {
+          federal: [
+            {
+              id: 'ocd-1',
+              name: 'Federal Rep',
+              office: 'Senator',
+              party: 'Democratic',
+              government_level: 'federal',
+              jurisdiction: 'US',
+            },
+          ],
+          state: [
+            {
+              id: 'ocd-2',
+              name: 'State Rep',
+              office: 'Governor',
+              party: 'Republican',
+              government_level: 'state',
+              jurisdiction: 'California',
+            },
+          ],
+          local: [
+            {
+              id: 'ocd-3',
+              name: 'Local Rep',
+              office: 'Mayor',
+              party: 'Independent',
+              government_level: 'local',
+              jurisdiction: 'San Francisco',
+            },
+          ],
+        },
+        metadata: {
+          address: '123 Market St, San Francisco, CA',
+          total_count: 3,
+          government_levels: ['federal', 'state', 'local'],
+        },
+      };
+
+      const mockFetch = vi.mocked(fetch);
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      } as Response);
+
+      const user = userEvent.setup();
+      render(<HomePage />);
+
+      const input = screen.getByLabelText(/enter your address/i);
+      const button = screen.getByRole('button', { name: /find my representatives/i });
+
+      await user.type(input, '123 Market St, San Francisco');
+      await user.click(button);
+
+      // Wait for all representatives to appear
+      await waitFor(() => {
+        expect(screen.getByText('Federal Rep')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('State Rep')).toBeInTheDocument();
+      expect(screen.getByText('Local Rep')).toBeInTheDocument();
+      
+      // Check sections
+      expect(screen.getByText('Federal Representatives')).toBeInTheDocument();
+      expect(screen.getByText('State Representatives')).toBeInTheDocument();
+      expect(screen.getByText('Local Representatives')).toBeInTheDocument();
+
+      // Check metadata
+      expect(screen.getByText(/Found 3 representative/i)).toBeInTheDocument();
+    });
   });
 });
