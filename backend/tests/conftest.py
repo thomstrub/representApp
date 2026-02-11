@@ -1,6 +1,7 @@
 """
 Test configuration and fixtures
 """
+
 import pytest
 import os
 import sys
@@ -11,9 +12,9 @@ backend_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_dir))
 
 # Set test environment variables
-os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
-os.environ['DDB_TABLE_NAME'] = 'test-representatives'
-os.environ['LOG_LEVEL'] = 'DEBUG'
+os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
+os.environ["DDB_TABLE_NAME"] = "test-representatives"
+os.environ["LOG_LEVEL"] = "DEBUG"
 
 
 # Test fixtures for Google Maps Geocoding API responses
@@ -23,62 +24,45 @@ def successful_geocoding_response():
     return [
         {
             "address_components": [
-                {
-                    "long_name": "1600",
-                    "short_name": "1600",
-                    "types": ["street_number"]
-                },
+                {"long_name": "1600", "short_name": "1600", "types": ["street_number"]},
                 {
                     "long_name": "Pennsylvania Avenue Northwest",
                     "short_name": "Pennsylvania Avenue NW",
-                    "types": ["route"]
+                    "types": ["route"],
                 },
                 {
                     "long_name": "Northwest Washington",
                     "short_name": "Northwest Washington",
-                    "types": ["neighborhood", "political"]
+                    "types": ["neighborhood", "political"],
                 },
                 {
                     "long_name": "Washington",
                     "short_name": "Washington",
-                    "types": ["locality", "political"]
+                    "types": ["locality", "political"],
                 },
                 {
                     "long_name": "District of Columbia",
                     "short_name": "DC",
-                    "types": ["administrative_area_level_1", "political"]
+                    "types": ["administrative_area_level_1", "political"],
                 },
                 {
                     "long_name": "United States",
                     "short_name": "US",
-                    "types": ["country", "political"]
+                    "types": ["country", "political"],
                 },
-                {
-                    "long_name": "20500",
-                    "short_name": "20500",
-                    "types": ["postal_code"]
-                }
+                {"long_name": "20500", "short_name": "20500", "types": ["postal_code"]},
             ],
             "formatted_address": "1600 Pennsylvania Avenue NW, Washington, DC 20500, USA",
             "geometry": {
-                "location": {
-                    "lat": 38.8976763,
-                    "lng": -77.0365298
-                },
+                "location": {"lat": 38.8976763, "lng": -77.0365298},
                 "location_type": "ROOFTOP",
                 "viewport": {
-                    "northeast": {
-                        "lat": 38.8990252802915,
-                        "lng": -77.0351808197085
-                    },
-                    "southwest": {
-                        "lat": 38.8963273197085,
-                        "lng": -77.0378787802915
-                    }
-                }
+                    "northeast": {"lat": 38.8990252802915, "lng": -77.0351808197085},
+                    "southwest": {"lat": 38.8963273197085, "lng": -77.0378787802915},
+                },
             },
             "place_id": "ChIJGVtI4by3t4kRr51d_Qm_x58",
-            "types": ["street_address"]
+            "types": ["street_address"],
         }
     ]
 
@@ -92,49 +76,40 @@ def seattle_geocoding_response():
                 {
                     "long_name": "Pike Place Market",
                     "short_name": "Pike Place Market",
-                    "types": ["establishment", "point_of_interest"]
+                    "types": ["establishment", "point_of_interest"],
                 },
                 {
                     "long_name": "Seattle",
                     "short_name": "Seattle",
-                    "types": ["locality", "political"]
+                    "types": ["locality", "political"],
                 },
                 {
                     "long_name": "King County",
                     "short_name": "King County",
-                    "types": ["administrative_area_level_2", "political"]
+                    "types": ["administrative_area_level_2", "political"],
                 },
                 {
                     "long_name": "Washington",
                     "short_name": "WA",
-                    "types": ["administrative_area_level_1", "political"]
+                    "types": ["administrative_area_level_1", "political"],
                 },
                 {
                     "long_name": "United States",
                     "short_name": "US",
-                    "types": ["country", "political"]
-                }
+                    "types": ["country", "political"],
+                },
             ],
             "formatted_address": "Pike Place Market, Seattle, WA, USA",
             "geometry": {
-                "location": {
-                    "lat": 47.6105,
-                    "lng": -122.3115
-                },
+                "location": {"lat": 47.6105, "lng": -122.3115},
                 "location_type": "GEOMETRIC_CENTER",
                 "viewport": {
-                    "northeast": {
-                        "lat": 47.6118489802915,
-                        "lng": -122.3101510197085
-                    },
-                    "southwest": {
-                        "lat": 47.6091510197085,
-                        "lng": -122.3128489802915
-                    }
-                }
+                    "northeast": {"lat": 47.6118489802915, "lng": -122.3101510197085},
+                    "southwest": {"lat": 47.6091510197085, "lng": -122.3128489802915},
+                },
             },
             "place_id": "ChIJ-bfVTh8VkFQRDZLQnmioK9s",
-            "types": ["establishment", "point_of_interest"]
+            "types": ["establishment", "point_of_interest"],
         }
     ]
 
@@ -154,49 +129,43 @@ def ambiguous_geocoding_response():
                 {
                     "long_name": "Springfield",
                     "short_name": "Springfield",
-                    "types": ["locality", "political"]
+                    "types": ["locality", "political"],
                 },
                 {
                     "long_name": "Illinois",
                     "short_name": "IL",
-                    "types": ["administrative_area_level_1", "political"]
-                }
+                    "types": ["administrative_area_level_1", "political"],
+                },
             ],
             "formatted_address": "Springfield, IL, USA",
             "geometry": {
-                "location": {
-                    "lat": 39.7817213,
-                    "lng": -89.6501481
-                },
-                "location_type": "APPROXIMATE"
+                "location": {"lat": 39.7817213, "lng": -89.6501481},
+                "location_type": "APPROXIMATE",
             },
             "place_id": "ChIJf2ymoNx_c4gRvCLvUUzUKuk",
-            "types": ["locality", "political"]
+            "types": ["locality", "political"],
         },
         {
             "address_components": [
                 {
                     "long_name": "Springfield",
                     "short_name": "Springfield",
-                    "types": ["locality", "political"]
+                    "types": ["locality", "political"],
                 },
                 {
                     "long_name": "Missouri",
                     "short_name": "MO",
-                    "types": ["administrative_area_level_1", "political"]
-                }
+                    "types": ["administrative_area_level_1", "political"],
+                },
             ],
             "formatted_address": "Springfield, MO, USA",
             "geometry": {
-                "location": {
-                    "lat": 37.2089572,
-                    "lng": -93.2922989
-                },
-                "location_type": "APPROXIMATE"
+                "location": {"lat": 37.2089572, "lng": -93.2922989},
+                "location_type": "APPROXIMATE",
             },
             "place_id": "ChIJf9mn-md1yIcRik_0BKzrj9E",
-            "types": ["locality", "political"]
-        }
+            "types": ["locality", "political"],
+        },
     ]
 
 
@@ -211,12 +180,7 @@ def successful_openstates_geo_response():
                 "name": "Adam Smith",
                 "family_name": "Smith",
                 "given_name": "Adam",
-                "party": [
-                    {
-                        "name": "Democratic",
-                        "classification": "party"
-                    }
-                ],
+                "party": [{"name": "Democratic", "classification": "party"}],
                 "current_role": {
                     "title": "Representative",
                     "org_classification": "upper",
@@ -224,28 +188,20 @@ def successful_openstates_geo_response():
                     "jurisdiction": {
                         "id": "ocd-jurisdiction/country:us",
                         "name": "United States",
-                        "classification": "country"
-                    }
+                        "classification": "country",
+                    },
                 },
                 "contact_details": [
-                    {
-                        "type": "email",
-                        "value": "https://adamsmith.house.gov/contact/email-me"
-                    }
+                    {"type": "email", "value": "https://adamsmith.house.gov/contact/email-me"}
                 ],
-                "image": "https://unitedstates.github.io/images/congress/450x550/S000510.jpg"
+                "image": "https://unitedstates.github.io/images/congress/450x550/S000510.jpg",
             },
             {
                 "id": "ocd-person/660e8400-e29b-41d4-a716-446655440001",
                 "name": "Patty Murray",
                 "family_name": "Murray",
                 "given_name": "Patty",
-                "party": [
-                    {
-                        "name": "Democratic",
-                        "classification": "party"
-                    }
-                ],
+                "party": [{"name": "Democratic", "classification": "party"}],
                 "current_role": {
                     "title": "Senator",
                     "org_classification": "upper",
@@ -253,27 +209,19 @@ def successful_openstates_geo_response():
                     "jurisdiction": {
                         "id": "ocd-jurisdiction/country:us",
                         "name": "United States",
-                        "classification": "country"
-                    }
+                        "classification": "country",
+                    },
                 },
                 "contact_details": [
-                    {
-                        "type": "email",
-                        "value": "https://www.murray.senate.gov/write-to-patty/"
-                    }
-                ]
+                    {"type": "email", "value": "https://www.murray.senate.gov/write-to-patty/"}
+                ],
             },
             {
                 "id": "ocd-person/770e8400-e29b-41d4-a716-446655440002",
                 "name": "Maria Cantwell",
                 "family_name": "Cantwell",
                 "given_name": "Maria",
-                "party": [
-                    {
-                        "name": "Democratic",
-                        "classification": "party"
-                    }
-                ],
+                "party": [{"name": "Democratic", "classification": "party"}],
                 "current_role": {
                     "title": "Senator",
                     "org_classification": "upper",
@@ -281,21 +229,16 @@ def successful_openstates_geo_response():
                     "jurisdiction": {
                         "id": "ocd-jurisdiction/country:us",
                         "name": "United States",
-                        "classification": "country"
-                    }
-                }
+                        "classification": "country",
+                    },
+                },
             },
             {
                 "id": "ocd-person/880e8400-e29b-41d4-a716-446655440003",
                 "name": "Jay Inslee",
                 "family_name": "Inslee",
                 "given_name": "Jay",
-                "party": [
-                    {
-                        "name": "Democratic",
-                        "classification": "party"
-                    }
-                ],
+                "party": [{"name": "Democratic", "classification": "party"}],
                 "current_role": {
                     "title": "Governor",
                     "org_classification": "executive",
@@ -303,21 +246,16 @@ def successful_openstates_geo_response():
                     "jurisdiction": {
                         "id": "ocd-jurisdiction/country:us/state:wa",
                         "name": "Washington",
-                        "classification": "state"
-                    }
-                }
+                        "classification": "state",
+                    },
+                },
             },
             {
                 "id": "ocd-person/990e8400-e29b-41d4-a716-446655440004",
                 "name": "Jenny Durkan",
                 "family_name": "Durkan",
                 "given_name": "Jenny",
-                "party": [
-                    {
-                        "name": "Nonpartisan",
-                        "classification": "party"
-                    }
-                ],
+                "party": [{"name": "Nonpartisan", "classification": "party"}],
                 "current_role": {
                     "title": "Mayor",
                     "org_classification": "executive",
@@ -325,17 +263,12 @@ def successful_openstates_geo_response():
                     "jurisdiction": {
                         "id": "ocd-jurisdiction/country:us/state:wa/place:seattle",
                         "name": "Seattle",
-                        "classification": "municipality"
-                    }
-                }
-            }
+                        "classification": "municipality",
+                    },
+                },
+            },
         ],
-        "pagination": {
-            "page": 1,
-            "per_page": 20,
-            "total_items": 5,
-            "total_pages": 1
-        }
+        "pagination": {"page": 1, "per_page": 20, "total_items": 5, "total_pages": 1},
     }
 
 
@@ -344,12 +277,7 @@ def empty_openstates_geo_response():
     """Fixture for OpenStates geo API response with no representatives"""
     return {
         "results": [],
-        "pagination": {
-            "page": 1,
-            "per_page": 20,
-            "total_items": 0,
-            "total_pages": 0
-        }
+        "pagination": {"page": 1, "per_page": 20, "total_items": 0, "total_pages": 0},
     }
 
 
@@ -361,14 +289,9 @@ def partial_openstates_geo_response():
             {
                 "id": "ocd-person/550e8400-e29b-41d4-a716-446655440000",
                 "name": "Adam Smith",
-                "family_name": "Smith", 
+                "family_name": "Smith",
                 "given_name": "Adam",
-                "party": [
-                    {
-                        "name": "Republican",
-                        "classification": "party"
-                    }
-                ],
+                "party": [{"name": "Republican", "classification": "party"}],
                 "current_role": {
                     "title": "Representative",
                     "org_classification": "lower",
@@ -376,15 +299,10 @@ def partial_openstates_geo_response():
                     "jurisdiction": {
                         "id": "ocd-jurisdiction/country:us",
                         "name": "United States",
-                        "classification": "country"
-                    }
-                }
+                        "classification": "country",
+                    },
+                },
             }
         ],
-        "pagination": {
-            "page": 1,
-            "per_page": 20,
-            "total_items": 1,
-            "total_pages": 1
-        }
+        "pagination": {"page": 1, "per_page": 20, "total_items": 1, "total_pages": 1},
     }

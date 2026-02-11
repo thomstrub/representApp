@@ -2,11 +2,14 @@
 
 Python Lambda-based backend for the Represent App using AWS Powertools.
 
+**Feature**: Geolocation-based representative lookup using Google Maps Geocoding + OpenStates geo endpoint.
+
 ## Architecture
 
 - **Lambda Functions**: Python 3.9 handlers using AWS Lambda Powertools
 - **API Gateway**: HTTP API (v2) with Lambda proxy integration
 - **Database**: DynamoDB for data persistence
+- **Geolocation Flow**: Address → Google Maps Geocoding → Coordinates → OpenStates "/people.geo" endpoint
 - **Infrastructure**: AWS CDK for Infrastructure as Code
 
 ## Project Structure
@@ -14,17 +17,24 @@ Python Lambda-based backend for the Represent App using AWS Powertools.
 ```
 backend/
 ├── src/
-│   ├── handlers/      # Lambda handler functions
-│   │   └── api.py     # Main API handler with routing
-│   ├── models/        # Data models and business logic
-│   │   ├── base.py    # Base response and error models
-│   │   ├── domain.py  # Domain-specific models (Representative)
-│   │   └── store.py   # DynamoDB persistence layer
-│   └── utils/         # Utility functions
+│   ├── handlers/           # Lambda handler functions
+│   │   ├── address_lookup.py  # Address-to-representatives handler (geolocation flow)  
+│   │   └── api.py          # Main API handler with routing
+│   ├── services/           # External API clients
+│   │   ├── google_maps.py  # Google Maps Geocoding API client
+│   │   └── openstates.py   # OpenStates API client (including geo endpoint)
+│   ├── models/             # Data models and business logic
+│   │   ├── base.py         # Base response and error models
+│   │   ├── domain.py       # Domain-specific models (Representative)
+│   │   └── store.py        # DynamoDB persistence layer
+│   └── utils/              # Utility functions
+│       ├── parameter_store.py  # AWS Parameter Store for API keys
+│       ├── validators.py   # Input validation utilities
+│       └── errors.py       # Error handling framework
 ├── tests/
-│   ├── unit/          # Unit tests
-│   └── integration/   # Integration tests
-└── requirements.txt   # Python dependencies
+│   ├── unit/               # Unit tests
+│   └── integration/        # Integration tests
+└── requirements.txt        # Python dependencies (includes googlemaps>=4.10.0)
 
 infrastructure/
 ├── stacks/
@@ -61,6 +71,21 @@ pip install -r requirements.txt
 cp .env.example .env
 # Edit .env with your AWS account details
 ```
+
+## Geolocation Flow
+
+The backend implements an address-to-representatives lookup using a geolocation approach:
+
+1. **Address Input**: User provides a street address (e.g., "1600 Pennsylvania Avenue NW, Washington, DC")
+2. **Geocoding**: Google Maps Geocoding API converts the address to latitude/longitude coordinates
+3. **Representative Lookup**: OpenStates `/people.geo` endpoint returns representatives for those coordinates
+4. **Response Grouping**: Representatives are grouped by government level (federal, state, local) and returned
+
+### API Keys Required
+
+Store these securely in AWS Parameter Store:
+- `/represent-app/google-maps-api-key` - Google Maps Geocoding API key
+- `/represent-app/openstates-api-key` - OpenStates API key
 
 ## Development
 
