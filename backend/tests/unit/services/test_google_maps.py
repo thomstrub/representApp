@@ -61,7 +61,7 @@ class TestGoogleMapsClient:
 
             # Verify googlemaps client was called correctly
             mock_client_instance.geocode.assert_called_once_with(
-                "1600 Pennsylvania Avenue NW, Washington, DC", timeout=5
+                "1600 Pennsylvania Avenue NW, Washington, DC"
             )
 
     def test_invalid_address_returns_empty_result(self, empty_geocoding_response):
@@ -82,7 +82,7 @@ class TestGoogleMapsClient:
 
         # Verify the API was still called
         mock_client_instance.geocode.assert_called_once_with(
-            "Invalid Address XYZ123NonExistent", timeout=5
+            "Invalid Address XYZ123NonExistent"
         )
 
     def test_timeout_error_raises_api_exception(self):
@@ -99,7 +99,7 @@ class TestGoogleMapsClient:
 
         # Should raise ApiException with EXTERNAL_SERVICE_ERROR
         with pytest.raises(self.ApiException) as exc_info:
-            self.client.geocode("Any Address", timeout=5)
+            self.client.geocode("Any Address")
 
         # Verify exception details
         assert exc_info.value.code == self.ErrorCode.EXTERNAL_SERVICE_ERROR
@@ -152,4 +152,4 @@ class TestGoogleMapsClient:
         assert result["formatted_address"] == "Springfield, IL, USA"
 
         # Verify the API was called
-        mock_client_instance.geocode.assert_called_once_with("Springfield", timeout=5)
+        mock_client_instance.geocode.assert_called_once_with("Springfield")

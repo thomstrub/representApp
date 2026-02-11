@@ -12,7 +12,7 @@ aws-xray-sdk>=2.12.0
 requests>=2.31.0
 
 # Google Maps API Client
-googlemaps>=4.10.0
+googlemaps>=4.2.0
 
 # DynamoDB JSON utilities
 dynamodb-json>=1.3

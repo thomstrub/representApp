@@ -17,24 +17,25 @@ logger = Logger()
 class GoogleMapsClient:
     """Client for Google Maps Geocoding API"""
 
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, timeout: int = 5):
         """
         Initialize Google Maps client
 
         Args:
             api_key: Google Maps API key for Geocoding API
+            timeout: Request timeout in seconds (default: 5)
         """
         self.api_key = api_key
-        self.client = googlemaps.Client(key=api_key)
+        self.timeout = timeout
+        self.client = googlemaps.Client(key=api_key, timeout=timeout)
         logger.info("Google Maps client initialized successfully")
 
-    def geocode(self, address: str, timeout: int = 5) -> Optional[Dict[str, Any]]:
+    def geocode(self, address: str) -> Optional[Dict[str, Any]]:
         """
         Geocode an address to latitude/longitude coordinates
 
         Args:
             address: Street address to geocode (e.g., "1600 Pennsylvania Ave NW, Washington, DC")
-            timeout: Request timeout in seconds (default: 5)
 
         Returns:
             Dict with latitude, longitude, and formatted_address, or None if no results
@@ -44,11 +45,11 @@ class GoogleMapsClient:
         """
         try:
             logger.info(
-                f"Geocoding address with timeout {timeout}s", extra={"address_length": len(address)}
+                f"Geocoding address with timeout {self.timeout}s", extra={"address_length": len(address)}
             )
 
             # Call Google Maps Geocoding API
-            results = self.client.geocode(address, timeout=timeout)
+            results = self.client.geocode(address)
 
             # Handle empty results (invalid/unfound address)
             if not results:
@@ -79,10 +80,10 @@ class GoogleMapsClient:
             return geocoding_result
 
         except Timeout as e:
-            logger.error(f"Google Maps API timeout after {timeout} seconds: {str(e)}")
+            logger.error(f"Google Maps API timeout after {self.timeout} seconds: {str(e)}")
             raise ApiException(
                 code=ErrorCode.EXTERNAL_SERVICE_ERROR,
-                message=f"Google Maps geocoding timeout after {timeout} seconds",
+                message=f"Google Maps geocoding timeout after {self.timeout} seconds",
                 status_code=503,
                 details=str(e),
             )

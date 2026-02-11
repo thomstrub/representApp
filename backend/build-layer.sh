@@ -20,6 +20,7 @@ botocore>=1.34.0
 aws-xray-sdk>=2.12.0
 requests>=2.31.0
 dynamodb-json>=1.3
+googlemaps>=4.2.0
 EOF
 
 echo "Installing dependencies for Lambda runtime (manylinux2014_x86_64)..."

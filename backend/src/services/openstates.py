@@ -453,17 +453,19 @@ class OpenStatesClient:
                 website = link["url"]
                 break
 
-        # Get jurisdiction name
+        # Get jurisdiction name and classification
         jurisdiction_data = person_data.get("jurisdiction", {})
         jurisdiction = jurisdiction_data.get("name", "Unknown")
+        jurisdiction_classification = jurisdiction_data.get("classification", "state")
 
-        # Determine government level from division ID
-        division_id = current_role.get("division_id", "")
-        try:
-            government_level = self._parse_government_level_from_division_id(division_id)
-        except ValueError:
-            # Fallback to state level if parsing fails
+        # Determine government level from jurisdiction classification (more reliable than division_id)
+        if jurisdiction_classification == "country":
+            government_level = "federal"
+        elif jurisdiction_classification == "state":
             government_level = "state"
+        else:
+            # For county, municipality, etc.
+            government_level = "local"
 
         # Build Representative dictionary
         representative = {

@@ -174,7 +174,7 @@ class TestAddressToRepresentativesIntegration:
 
         # Verify API calls were made correctly
         mock_gmaps_instance.geocode.assert_called_once_with(
-            "1600 Pennsylvania Avenue NW, Washington, DC", timeout=5
+            "1600 Pennsylvania Avenue NW, Washington, DC"
         )
         mock_requests_get.assert_called_once()
 

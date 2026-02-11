@@ -1,11 +1,137 @@
-# React + TypeScript + Vite
+# Represent App - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript frontend for finding and contacting political representatives.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Framework**: React 18 + TypeScript
+- **Build Tool**: Vite
+- **UI Library**: Material UI (MUI)
+- **Form Management**: React Hook Form + Zod validation
+- **Testing**: Vitest + React Testing Library
+- **HTTP Client**: Native Fetch API
+
+## Quick Start
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Run tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+## Environment Configuration
+
+The app uses environment variables for API configuration:
+
+- **Development**: `.env` (points to localhost)
+- **Production**: `.env.production` (points to AWS backend)
+
+```bash
+# Copy example file and customize
+cp .env.example .env
+```
+
+## Testing Backend Integration
+
+### Automated Tests
+
+```bash
+# Run API compatibility tests
+npm test -- api-compatibility.test.ts
+
+# Run all tests
+npm test
+```
+
+### Manual API Connection Test
+
+```bash
+# Test connectivity to production backend
+node scripts/test-api-connection.js
+```
+
+This script validates:
+- ✅ API endpoint is reachable
+- ✅ Response structure matches TypeScript types
+- ✅ All required fields are present
+- ✅ Data types are correct
+
+## Project Structure
+
+```
+src/
+├── components/         # React components
+│   ├── AddressForm.tsx
+│   ├── RepresentativeCard.tsx
+│   ├── ResultsDisplay.tsx
+│   └── LoadingIndicator.tsx
+├── hooks/             # Custom React hooks
+│   └── useRepresentatives.ts
+├── types/             # TypeScript type definitions
+│   ├── api.ts         # API response types
+│   ├── representative.ts
+│   ├── form.ts
+│   └── state.ts
+├── utils/             # Utility functions
+│   ├── grouping.ts    # Group reps by government level
+│   └── errors.ts      # Error handling utilities
+├── pages/             # Page components
+│   └── HomePage.tsx
+└── main.tsx           # App entry point
+
+tests/
+├── unit/              # Component unit tests
+└── integration/       # Integration tests
+```
+
+## Architecture
+
+### API Integration
+
+The frontend connects to the backend API via the `useRepresentatives` hook:
+
+```typescript
+const { appState, fetchByAddress, clearResults } = useRepresentatives();
+
+// Fetch representatives
+await fetchByAddress("1301 4th Ave Seattle WA 98101");
+
+// appState contains: { status, data, message }
+```
+
+### TypeScript Types
+
+All API responses are strongly typed. See [src/types/api.ts](src/types/api.ts) for the complete API contract.
+
+### State Management
+
+Simple state management using React hooks:
+- `useState` for local component state
+- Custom `useRepresentatives` hook for API state
+- No Redux or complex state libraries needed for MVP
+
+## Development Guidelines
+
+- Follow TDD approach (write tests first)
+- All components must have unit tests
+- Integration tests for critical user flows
+- Maintain 100% test coverage for new features
+- Use Material UI components consistently
+- Follow TypeScript strict mode
 
 ## React Compiler
 

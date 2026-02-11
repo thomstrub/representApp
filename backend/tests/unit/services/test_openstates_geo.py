@@ -259,6 +259,11 @@ class TestOpenStatesGeoEndpoint:
                         "title": "U.S. Representative",
                         "division_id": "ocd-division/country:us/state:wa/cd:7",  # Congressional district
                     },
+                    "jurisdiction": {
+                        "id": "ocd-jurisdiction/country:us/government",
+                        "name": "United States",
+                        "classification": "country"
+                    },
                 },
                 {
                     "id": "ocd-person/state-person",
@@ -267,6 +272,11 @@ class TestOpenStatesGeoEndpoint:
                         "title": "State Representative",
                         "division_id": "ocd-division/country:us/state:wa/sldl:43",  # State legislative
                     },
+                    "jurisdiction": {
+                        "id": "ocd-jurisdiction/country:us/state:wa/government",
+                        "name": "Washington",
+                        "classification": "state"
+                    },
                 },
                 {
                     "id": "ocd-person/local-person",
@@ -274,6 +284,11 @@ class TestOpenStatesGeoEndpoint:
                     "current_role": {
                         "title": "City Council Member",
                         "division_id": "ocd-division/country:us/state:wa/place:seattle",  # Local
+                    },
+                    "jurisdiction": {
+                        "id": "ocd-jurisdiction/country:us/state:wa/place:seattle/government",
+                        "name": "Seattle",
+                        "classification": "municipality"
                     },
                 },
             ]

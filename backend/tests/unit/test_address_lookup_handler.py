@@ -39,24 +39,20 @@ def test_address_lookup_success_geolocation_flow(MockOpenStatesClient, MockGoogl
         "formatted_address": "1600 Pennsylvania Avenue NW, Washington, DC 20500, USA",
     }
 
-    # Mock OpenStates geo response
+    # Mock OpenStates geo response (already transformed by OpenStatesClient)
     mock_openstates_reps = [
         {
             "id": "ocd-person/president-001",
             "name": "Joe Biden",
+            "office": "President",
             "party": "Democratic",
-            "current_role": {
-                "title": "President",
-                "district": "United States",
-                "division_id": "ocd-division/country:us",
-            },
-            "jurisdiction": {
-                "id": "ocd-jurisdiction/country:us/government",
-                "name": "United States",
-                "classification": "country",
-            },
             "email": "president@whitehouse.gov",
-            "image": "https://example.com/biden.jpg",
+            "phone": None,
+            "address": None,
+            "website": None,
+            "photo_url": "https://example.com/biden.jpg",
+            "government_level": "federal",
+            "jurisdiction": "United States",
         }
     ]
 
@@ -95,8 +91,8 @@ def test_address_lookup_success_geolocation_flow(MockOpenStatesClient, MockGoogl
         assert len(representatives["federal"]) == 1
         federal_rep = representatives["federal"][0]
         assert federal_rep["name"] == "Joe Biden"
-        assert federal_rep["position"] == "President"
-        assert federal_rep["state"] == "United States"
+        assert federal_rep["office"] == "President"
+        assert federal_rep["jurisdiction"] == "United States"
 
         # Assert metadata includes geocoding information
         metadata = result["metadata"]
@@ -108,7 +104,7 @@ def test_address_lookup_success_geolocation_flow(MockOpenStatesClient, MockGoogl
 
         # Verify API calls made correctly
         mock_gmaps_instance.geocode.assert_called_once_with(
-            "1600 Pennsylvania Avenue NW, Washington, DC", timeout=5
+            "1600 Pennsylvania Avenue NW, Washington, DC"
         )
         mock_openstates_instance.get_representatives_by_coordinates.assert_called_once_with(
             38.8976763, -77.0365298

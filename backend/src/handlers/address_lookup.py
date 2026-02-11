@@ -8,15 +8,12 @@ Feature: 005-geolocation-lookup (User Story 3 - T044-T054)
 """
 
 import time
-from typing import Dict, Any, List, Set
-from uuid import uuid4
-from datetime import datetime
+from typing import Dict, Any, List
 from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
 from src.services.google_maps import GoogleMapsClient
 from src.services.openstates import OpenStatesClient
-from src.models.domain import Representative
 from src.utils.validators import validate_address
 from src.utils.errors import ApiException, ErrorCode
 
@@ -95,7 +92,7 @@ class AddressLookupHandler:
             # T045: Replace Google Civic flow with geocoding call
             # T046: Add coordinate extraction from geocoding result
             geocoding_start = time.time()
-            geocoding_result = self.google_maps_client.geocode(address, timeout=5)
+            geocoding_result = self.google_maps_client.geocode(address)
             geocoding_time = time.time() - geocoding_start
 
             if not geocoding_result:
@@ -139,24 +136,10 @@ class AddressLookupHandler:
                 key="representatives_found", value=len(openstates_representatives)
             )
 
-            # T048: Add transformation and grouping of representatives
-            transformed_representatives = []
-            for person_data in openstates_representatives:
-                try:
-                    representative = self._transform_openstates_person_to_representative(
-                        person_data
-                    )
-                    transformed_representatives.append(representative)
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to transform representative: {str(e)}",
-                        extra={"person_id": person_data.get("id", "unknown")},
-                    )
-                    # Continue processing other representatives
-
-            # Group representatives by government level
+            # T048: Group representatives by government level
+            # Note: OpenStatesClient already transforms the data, so we use it directly
             grouped_representatives = self._group_by_government_level(
-                transformed_representatives, openstates_representatives
+                openstates_representatives
             )
 
             # T049: Build final response with metadata (address, coordinates, total_count, government_levels)
@@ -217,61 +200,29 @@ class AddressLookupHandler:
                 details=str(e),
             )
 
-    def _transform_openstates_person_to_representative(
-        self, person: Dict[str, Any]
-    ) -> Representative:
-        """
-        Transform OpenStates person object to Representative model
-
-        Args:
-            person: OpenStates person data from geo endpoint
-
-        Returns:
-            Representative model instance
-        """
-        return Representative(
-            id=str(uuid4()),  # Fresh UUID (no persistence in MVP)
-            name=person["name"],
-            position=person["current_role"]["title"],
-            district=person["current_role"].get("district"),
-            state=person["jurisdiction"]["name"],
-            party=person.get("party"),
-            contact_info={
-                "email": person.get("email"),
-                "phone": None,  # OpenStates geo doesn't include phone numbers
-                "image": person.get("image"),
-            },
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
-        )
-
     def _group_by_government_level(
-        self, representatives: List[Representative], openstates_data: List[Dict[str, Any]]
+        self, representatives: List[Dict[str, Any]]
     ) -> Dict[str, List[Dict[str, Any]]]:
         """
-        Group representatives by government level based on jurisdiction classification
+        Group representatives by government level
 
         Args:
-            representatives: List of Representative model instances
-            openstates_data: Original OpenStates data for classification mapping
+            representatives: List of representative dictionaries (already transformed by OpenStatesClient)
 
         Returns:
             Dict with federal, state, local keys containing representative dicts
         """
         grouped = {"federal": [], "state": [], "local": []}
 
-        for rep, data in zip(representatives, openstates_data):
-            # Convert Representative model to dict for response
-            rep_dict = rep.dict()
-
-            # Determine government level from jurisdiction classification
-            classification = data["jurisdiction"]["classification"]
-            if classification == "country":
-                grouped["federal"].append(rep_dict)
-            elif classification == "state":
-                grouped["state"].append(rep_dict)
-            else:  # county, municipality, etc.
-                grouped["local"].append(rep_dict)
+        for rep_data in representatives:
+            # Get government level from transformed data
+            government_level = rep_data.get("government_level", "state")
+            
+            if government_level in grouped:
+                grouped[government_level].append(rep_data)
+            else:
+                # Fallback to state if unexpected level
+                grouped["state"].append(rep_data)
 
         return grouped
 

@@ -4,9 +4,12 @@ import type { Representative } from './representative';
  * Success response from GET /representatives
  */
 export interface ApiSuccessResponse {
+  address: string;  // Top-level address field returned by backend
   representatives: Representative[];
   metadata: {
     address: string;
+    division_count: number;
+    representative_count: number;
     government_levels: string[];
     response_time_ms?: number;
   };

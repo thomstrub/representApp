@@ -20,41 +20,12 @@ class BackendStack(cdk.Stack):
     def __init__(self, scope: cdk.App, stack_id: str, env_name: str, **kwargs):
         super().__init__(scope, stack_id, **kwargs)
         
-        # T072-T073: Parameter Store for API Keys
-        # Note: These are placeholder parameters. After deployment, set actual values using AWS CLI:
-        # aws ssm put-parameter --name "/represent-app/google-civic-api-key" \
+        # Parameter Store API Keys Configuration
+        # Note: Parameters must be created manually before deployment:
+        # aws ssm put-parameter --name "/represent-app/google-maps-api-key" \
         #     --value "YOUR_KEY" --type "SecureString" --overwrite
         # aws ssm put-parameter --name "/represent-app/openstates-api-key" \
         #     --value "YOUR_KEY" --type "SecureString" --overwrite
-        
-        # Create String parameters (not SecureString) as CDK v2 doesn't support SecureString in construct
-        # Users will update these to SecureString via AWS CLI after deployment
-        google_civic_param = ssm.StringParameter(
-            self,
-            f"{stack_id}-GoogleCivicApiKey",
-            parameter_name="/represent-app/google-civic-api-key",
-            description="Google Civic Information API key for address-to-OCD-ID conversion",
-            string_value="PLACEHOLDER_SET_VIA_CLI",  # Placeholder - set actual value via CLI
-            tier=ssm.ParameterTier.STANDARD
-        )
-        
-        openstates_param = ssm.StringParameter(
-            self,
-            f"{stack_id}-OpenStatesApiKey",
-            parameter_name="/represent-app/openstates-api-key",
-            description="OpenStates API key for representative data retrieval",
-            string_value="PLACEHOLDER_SET_VIA_CLI",  # Placeholder - set actual value via CLI
-            tier=ssm.ParameterTier.STANDARD
-        )
-        
-        google_maps_param = ssm.StringParameter(
-            self,
-            f"{stack_id}-GoogleMapsApiKey",
-            parameter_name="/represent-app/google-maps-api-key",
-            description="Google Maps Geocoding API key for address-to-coordinates conversion",
-            string_value="PLACEHOLDER_SET_VIA_CLI",  # Placeholder - set actual value via CLI
-            tier=ssm.ParameterTier.STANDARD
-        )
         
         # DynamoDB Table
         table = ddb.Table(
@@ -102,10 +73,20 @@ class BackendStack(cdk.Stack):
         # Grant Lambda permissions to DynamoDB
         table.grant_read_write_data(api_lambda)
         
-        # T074-T075: Grant Lambda permissions to Parameter Store
-        google_civic_param.grant_read(api_lambda)
-        openstates_param.grant_read(api_lambda)
-        google_maps_param.grant_read(api_lambda)
+        # Grant Lambda permissions to Parameter Store for API keys
+        api_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "ssm:GetParameter",
+                    "ssm:GetParameters"
+                ],
+                resources=[
+                    f"arn:aws:ssm:{self.region}:{self.account}:parameter/represent-app/google-maps-api-key",
+                    f"arn:aws:ssm:{self.region}:{self.account}:parameter/represent-app/openstates-api-key"
+                ]
+            )
+        )
         
         # Additional IAM permissions for Parameter Store operations
         api_lambda.add_to_role_policy(

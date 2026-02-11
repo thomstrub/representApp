@@ -5,6 +5,7 @@ Provides centralized access to AWS Systems Manager Parameter Store
 for managing API keys securely across the application.
 """
 
+import os
 import boto3
 from botocore.exceptions import ClientError, BotoCoreError
 from aws_lambda_powertools import Logger
@@ -17,8 +18,11 @@ class ParameterStoreClient:
     """Client for retrieving parameters from AWS Systems Manager Parameter Store"""
 
     def __init__(self):
-        """Initialize SSM client"""
-        self.ssm = boto3.client("ssm")
+        """Initialize SSM client with explicit region from Lambda environment"""
+        # Check AWS_REGION first (Lambda), then AWS_DEFAULT_REGION (tests), then default
+        region = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION", "us-west-1")
+        self.ssm = boto3.client("ssm", region_name=region)
+        logger.info(f"Initialized Parameter Store client for region: {region}")
 
     def get_parameter(self, parameter_name: str, decrypt: bool = True) -> str:
         """
