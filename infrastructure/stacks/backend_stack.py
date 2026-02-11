@@ -47,6 +47,15 @@ class BackendStack(cdk.Stack):
             tier=ssm.ParameterTier.STANDARD
         )
         
+        google_maps_param = ssm.StringParameter(
+            self,
+            f"{stack_id}-GoogleMapsApiKey",
+            parameter_name="/represent-app/google-maps-api-key",
+            description="Google Maps Geocoding API key for address-to-coordinates conversion",
+            string_value="PLACEHOLDER_SET_VIA_CLI",  # Placeholder - set actual value via CLI
+            tier=ssm.ParameterTier.STANDARD
+        )
+        
         # DynamoDB Table
         table = ddb.Table(
             self,
@@ -96,6 +105,7 @@ class BackendStack(cdk.Stack):
         # T074-T075: Grant Lambda permissions to Parameter Store
         google_civic_param.grant_read(api_lambda)
         openstates_param.grant_read(api_lambda)
+        google_maps_param.grant_read(api_lambda)
         
         # Additional IAM permissions for Parameter Store operations
         api_lambda.add_to_role_policy(

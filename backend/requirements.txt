@@ -11,6 +11,9 @@ aws-xray-sdk>=2.12.0
 # HTTP Client for External APIs
 requests>=2.31.0
 
+# Google Maps API Client
+googlemaps>=4.10.0
+
 # DynamoDB JSON utilities
 dynamodb-json>=1.3
 
