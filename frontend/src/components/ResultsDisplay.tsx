@@ -1,4 +1,4 @@
-import { Box, Typography, Grid, Alert, AlertTitle } from '@mui/material';
+import { Box, Typography, Grid } from '@mui/material';
 import type { Representative } from '../types/representative';
 import type { ApiSuccessResponse } from '../types/api';
 import { RepresentativeCard } from './RepresentativeCard';
@@ -32,18 +32,6 @@ export const ResultsDisplay = ({ representatives, data }: ResultsDisplayProps) =
             }
           </Typography>
         </Box>
-
-        {/* Warnings */}
-        {warnings && warnings.length > 0 && (
-          <Box sx={{ mb: 3 }}>
-            {warnings.map((warning, index) => (
-              <Alert severity="warning" key={index} role="alert" sx={{ mb: 1 }}>
-                <AlertTitle>Note</AlertTitle>
-                {warning}
-              </Alert>
-            ))}
-          </Box>
-        )}
 
         {/* Empty State */}
         {!hasAnyRepresentatives && (

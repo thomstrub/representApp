@@ -148,17 +148,6 @@ describe('ResultsDisplay', () => {
       expect(screen.getByText(/Found 2 representative/i)).toBeInTheDocument();
     });
 
-    it('should display warnings when present', () => {
-      const dataWithWarnings = {
-        ...mockApiResponse,
-        warnings: ['Local representatives data may be incomplete'],
-      };
-
-      render(<ResultsDisplay data={dataWithWarnings} />);
-
-      expect(screen.getByText(/Local representatives data may be incomplete/)).toBeInTheDocument();
-    });
-
     it('should show helpful message when all levels are empty', () => {
       const emptyData = {
         representatives: { federal: [], state: [], local: [] },

@@ -274,41 +274,6 @@ describe('AddressLookup Integration', () => {
       expect(screen.getByText(/Found 1 representative/i)).toBeInTheDocument();
     });
 
-    it('should display warnings when API returns them', async () => {
-      const mockResponse = {
-        representatives: {
-          federal: [],
-          state: [],
-          local: [],
-        },
-        metadata: {
-          address: '123 Main St',
-          total_count: 0,
-          government_levels: [],
-        },
-        warnings: ['Could not find local representatives'],
-      };
-
-      const mockFetch = vi.mocked(fetch);
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      } as Response);
-
-      const user = userEvent.setup();
-      render(<HomePage />);
-
-      const input = screen.getByLabelText(/enter your address/i);
-      const button = screen.getByRole('button', { name: /find my representatives/i });
-
-      await user.type(input, '123 Main St');
-      await user.click(button);
-
-      await waitFor(() => {
-        expect(screen.getByText(/Could not find local representatives/)).toBeInTheDocument();
-      });
-    });
-
     it('should display multiple government levels correctly', async () => {
       const mockResponse = {
         representatives: {
