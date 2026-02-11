@@ -19,9 +19,9 @@
 
 **Purpose**: Project initialization and validation
 
-- [ ] T001 Checkout branch `006-frontend-api-updates` and run `cd frontend && npm install`
-- [ ] T002 Verify existing frontend structure: types/, hooks/, components/, pages/, tests/
-- [ ] T003 [P] Run initial test suite to confirm baseline: `npm test` (all existing tests should pass)
+- [X] T001 Checkout branch `006-frontend-api-updates` and run `cd frontend && npm install`
+- [X] T002 Verify existing frontend structure: types/, hooks/, components/, pages/, tests/
+- [X] T003 [P] Run initial test suite to confirm baseline: `npm test` (all existing tests should pass)
 
 ---
 
@@ -33,18 +33,18 @@
 
 ### Tests for User Story 1 (Write FIRST - Red Phase)
 
-- [ ] T004 [P] [US1] Create test file for API types in frontend/tests/unit/types/api.test.ts with tests for GovernmentLevelGroup, ApiSuccessResponse, Coordinates, and isApiErrorResponse type guard
+- [X] T004 [P] [US1] Create test file for API types in frontend/tests/unit/types/api.test.ts with tests for GovernmentLevelGroup, ApiSuccessResponse, Coordinates, and isApiErrorResponse type guard
 - [ ] T005 [P] [US1] Create tests for updated useRepresentatives hook in frontend/tests/unit/hooks/useRepresentatives.test.ts to verify parsing of nested representatives structure
 - [ ] T006 [P] [US1] Create tests for updated ResultsDisplay component in frontend/tests/unit/components/ResultsDisplay.test.tsx to verify display of pre-grouped data
 - [ ] T007 [P] [US1] Create integration tests for full flow in frontend/tests/integration/HomePage.test.tsx to verify end-to-end grouped display
 
 ### Implementation for User Story 1 (Green Phase)
 
-- [ ] T008 [US1] Update TypeScript API types in frontend/src/types/api.ts to define GovernmentLevelGroup, Coordinates, Metadata, ApiSuccessResponse interfaces
-- [ ] T009 [US1] Update useRepresentatives hook in frontend/src/hooks/useRepresentatives.ts to parse new nested response structure with representatives, metadata, warnings
-- [ ] T010 [US1] Update ResultsDisplay component in frontend/src/components/ResultsDisplay.tsx to consume pre-grouped data directly (remove client-side grouping logic)
-- [ ] T011 [US1] Update HomePage component in frontend/src/pages/HomePage.tsx to pass full ApiSuccessResponse to ResultsDisplay
-- [ ] T012 [US1] Run all User Story 1 tests to verify they pass: `npm test -- tests/unit/types/ tests/unit/hooks/ tests/unit/components/ResultsDisplay tests/integration/HomePage`
+- [X] T008 [US1] Update TypeScript API types in frontend/src/types/api.ts to define GovernmentLevelGroup, Coordinates, Metadata, ApiSuccessResponse interfaces
+- [X] T009 [US1] Update useRepresentatives hook in frontend/src/hooks/useRepresentatives.ts to parse new nested response structure with representatives, metadata, warnings
+- [X] T010 [US1] Update ResultsDisplay component in frontend/src/components/ResultsDisplay.tsx to consume pre-grouped data directly (remove client-side grouping logic)
+- [X] T011 [US1] Update HomePage component in frontend/src/pages/HomePage.tsx to pass full ApiSuccessResponse to ResultsDisplay
+- [X] T012 [US1] Run all User Story 1 tests to verify they pass: `npm test -- tests/unit/types/ tests/unit/hooks/ tests/unit/components/ResultsDisplay tests/integration/HomePage`
 
 **Checkpoint**: At this point, representatives should display in grouped sections (Federal, State, Local) using backend-provided grouping
 
@@ -58,17 +58,17 @@
 
 ### Tests for User Story 2 (Write FIRST - Red Phase)
 
-- [ ] T013 [P] [US2] Add tests for metadata display to frontend/tests/unit/components/ResultsDisplay.test.tsx to verify resolved address and total count render correctly
-- [ ] T014 [P] [US2] Add tests for warnings display to frontend/tests/unit/components/ResultsDisplay.test.tsx to verify warning messages appear with Material UI Alert component
-- [ ] T015 [P] [US2] Add tests for empty state to frontend/tests/unit/components/ResultsDisplay.test.tsx to verify helpful message when all government level arrays are empty
-- [ ] T016 [P] [US2] Add integration tests to frontend/tests/integration/HomePage.test.tsx to verify metadata and warnings display in full flow
+- [X] T013 [P] [US2] Add tests for metadata display to frontend/tests/unit/components/ResultsDisplay.test.tsx to verify resolved address and total count render correctly
+- [X] T014 [P] [US2] Add tests for warnings display to frontend/tests/unit/components/ResultsDisplay.test.tsx to verify warning messages appear with Material UI Alert component
+- [X] T015 [P] [US2] Add tests for empty state to frontend/tests/unit/components/ResultsDisplay.test.tsx to verify helpful message when all government level arrays are empty
+- [X] T016 [P] [US2] Add integration tests to frontend/tests/integration/HomePage.test.tsx to verify metadata and warnings display in full flow
 
 ### Implementation for User Story 2 (Green Phase)
 
-- [ ] T017 [US2] Add metadata display section to ResultsDisplay component in frontend/src/components/ResultsDisplay.tsx to show resolved address and total count
-- [ ] T018 [US2] Add warnings display section to ResultsDisplay component in frontend/src/components/ResultsDisplay.tsx using Material UI Alert with severity="warning" and role="alert"
-- [ ] T019 [US2] Add empty state display to ResultsDisplay component in frontend/src/components/ResultsDisplay.tsx to show helpful message when metadata.total_count is 0
-- [ ] T020 [US2] Run all User Story 2 tests to verify they pass: `npm test -- tests/unit/components/ResultsDisplay tests/integration/HomePage`
+- [X] T017 [US2] Add metadata display section to ResultsDisplay component in frontend/src/components/ResultsDisplay.tsx to show resolved address and total count
+- [X] T018 [US2] Add warnings display section to ResultsDisplay component in frontend/src/components/ResultsDisplay.tsx using Material UI Alert with severity="warning" and role="alert"
+- [X] T019 [US2] Add empty state display to ResultsDisplay component in frontend/src/components/ResultsDisplay.tsx to show helpful message when metadata.total_count is 0
+- [X] T020 [US2] Run all User Story 2 tests to verify they pass: `npm test -- tests/unit/components/ResultsDisplay tests/integration/HomePage`
 
 **Checkpoint**: At this point, users should see resolved address, total counts, warning messages, and helpful empty states
 
@@ -82,17 +82,17 @@
 
 ### Tests for User Story 3 (Write FIRST - Red Phase)
 
-- [ ] T021 [P] [US3] Add tests to frontend/tests/unit/components/RepresentativeCard.test.tsx to verify jurisdiction displays for federal, state, and local representatives
-- [ ] T022 [P] [US3] Add tests to frontend/tests/unit/components/RepresentativeCard.test.tsx to verify contact info (email, phone, address, website) displays as clickable links with icons
-- [ ] T023 [P] [US3] Add tests to frontend/tests/unit/components/RepresentativeCard.test.tsx to verify photo fallback (initials avatar) when photo_url is null
-- [ ] T024 [P] [US3] Add edge case tests to frontend/tests/unit/components/RepresentativeCard.test.tsx for missing optional fields (no email, no phone, etc.)
+- [X] T021 [P] [US3] Add tests to frontend/tests/unit/components/RepresentativeCard.test.tsx to verify jurisdiction displays for federal, state, and local representatives
+- [X] T022 [P] [US3] Add tests to frontend/tests/unit/components/RepresentativeCard.test.tsx to verify contact info (email, phone, address, website) displays as clickable links with icons
+- [X] T023 [P] [US3] Add tests to frontend/tests/unit/components/RepresentativeCard.test.tsx to verify photo fallback (initials avatar) when photo_url is null
+- [X] T024 [P] [US3] Add edge case tests to frontend/tests/unit/components/RepresentativeCard.test.tsx for missing optional fields (no email, no phone, etc.)
 
 ### Implementation for User Story 3 (Green Phase)
 
-- [ ] T025 [US3] Review and update RepresentativeCard component in frontend/src/components/RepresentativeCard.tsx to ensure jurisdiction displays prominently
-- [ ] T026 [US3] Verify contact info rendering in frontend/src/components/RepresentativeCard.tsx to ensure clickable links with icons (email → mailto:, phone → tel:, website → opens in new tab)
-- [ ] T027 [US3] Verify photo fallback in frontend/src/components/RepresentativeCard.tsx displays initials avatar when photo_url is null
-- [ ] T028 [US3] Run all User Story 3 tests to verify they pass: `npm test -- tests/unit/components/RepresentativeCard`
+- [X] T025 [US3] Review and update RepresentativeCard component in frontend/src/components/RepresentativeCard.tsx to ensure jurisdiction displays prominently
+- [X] T026 [US3] Verify contact info rendering in frontend/src/components/RepresentativeCard.tsx to ensure clickable links with icons (email → mailto:, phone → tel:, website → opens in new tab)
+- [X] T027 [US3] Verify photo fallback in frontend/src/components/RepresentativeCard.tsx displays initials avatar when photo_url is null
+- [X] T028 [US3] Run all User Story 3 tests to verify they pass: `npm test -- tests/unit/components/RepresentativeCard`
 
 **Checkpoint**: All user stories should now be independently functional with complete representative details
 
@@ -102,15 +102,15 @@
 
 **Purpose**: Cleanup, optimization, and final validation
 
-- [ ] T029 [P] Remove deprecated grouping utility file frontend/src/utils/grouping.ts (no longer needed with backend grouping)
-- [ ] T030 [P] Remove deprecated grouping utility test file frontend/tests/unit/utils/grouping.test.ts
-- [ ] T031 Run full test suite to ensure all tests pass: `npm test`
-- [ ] T032 Run TypeScript type check to ensure no type errors: `npm run type-check` or verify in IDE
-- [ ] T033 Run ESLint to ensure no lint errors: `npm run lint`
-- [ ] T034 [P] Update type exports in frontend/src/types/api.ts to ensure all new types are properly exported
+- [X] T029 [P] Remove deprecated grouping utility file frontend/src/utils/grouping.ts (no longer needed with backend grouping)
+- [X] T030 [P] Remove deprecated grouping utility test file frontend/tests/unit/utils/grouping.test.ts
+- [X] T031 Run full test suite to ensure all tests pass: `npm test`
+- [X] T032 Run TypeScript type check to ensure no type errors: `npm run type-check` or verify in IDE
+- [X] T033 Run ESLint to ensure no lint errors: `npm run lint`
+- [X] T034 [P] Update type exports in frontend/src/types/api.ts to ensure all new types are properly exported
 - [ ] T035 Manual browser testing per quickstart.md validation checklist (address search, grouping, metadata, warnings, empty state)
-- [ ] T036 Refactor ResultsDisplay component if needed (consider extracting metadata and warnings into separate components for better separation of concerns)
-- [ ] T037 [P] Update frontend README.md with notes about new API structure if needed
+- [X] T036 Refactor ResultsDisplay component if needed (consider extracting metadata and warnings into separate components for better separation of concerns) - Component is clean and well-structured, no refactoring needed
+- [X] T037 [P] Update frontend README.md with notes about new API structure if needed - Already updated with nested structure documentation
 
 ---
 

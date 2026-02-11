@@ -17,13 +17,18 @@ describe('useRepresentatives', () => {
 
   it('should transition to loading state when fetchByAddress is called', async () => {
     const mockFetch = vi.mocked(fetch);
-    let resolvePromise: () => void;
     mockFetch.mockImplementationOnce(() => 
       new Promise((resolve) => {
-        resolvePromise = () => resolve({
-          ok: true,
-          json: async () => ({ representatives: [], metadata: { address: '', government_levels: [] } })
-        } as Response);
+        // Keep promise pending to test loading state
+        setTimeout(() => {
+          resolve({
+            ok: true,
+            json: async () => ({ 
+              representatives: { federal: [], state: [], local: [] }, 
+              metadata: { address: '', total_count: 0, government_levels: [] } 
+            })
+          } as Response);
+        }, 100);
       })
     );
 
@@ -74,8 +79,9 @@ describe('useRepresentatives', () => {
     });
 
     if (result.current.appState.status === 'success') {
-      expect(result.current.appState.data).toHaveLength(1);
-      expect(result.current.appState.data[0].name).toBe('Jane Smith');
+      expect(result.current.appState.data.metadata.total_count).toBe(1);
+      expect(result.current.appState.data.representatives.federal).toHaveLength(1);
+      expect(result.current.appState.data.representatives.federal[0].name).toBe('Jane Smith');
     }
   });
 
@@ -261,11 +267,11 @@ describe('useRepresentatives', () => {
         expect(result.current.appState.status).toBe('success');
       });
 
-      // Warnings should be accessible in the success state
+      // Warnings should be accessible in the success state data
       if (result.current.appState.status === 'success') {
-        expect(result.current.appState.warnings).toBeDefined();
-        expect(result.current.appState.warnings).toHaveLength(1);
-        expect(result.current.appState.warnings?.[0]).toContain('incomplete');
+        expect(result.current.appState.data.warnings).toBeDefined();
+        expect(result.current.appState.data.warnings).toHaveLength(1);
+        expect(result.current.appState.data.warnings?.[0]).toContain('incomplete');
       }
     });
 
@@ -297,12 +303,12 @@ describe('useRepresentatives', () => {
         expect(result.current.appState.status).toBe('success');
       });
 
-      // Metadata should be accessible
+      // Metadata should be accessible in the success state data
       if (result.current.appState.status === 'success') {
-        expect(result.current.appState.metadata).toBeDefined();
-        expect(result.current.appState.metadata?.total_count).toBe(1);
-        expect(result.current.appState.metadata?.government_levels).toEqual(['federal']);
-        expect(result.current.appState.metadata?.address).toBe('123 Main St, City, ST 12345');
+        expect(result.current.appState.data.metadata).toBeDefined();
+        expect(result.current.appState.data.metadata.total_count).toBe(1);
+        expect(result.current.appState.data.metadata.government_levels).toEqual(['federal']);
+        expect(result.current.appState.data.metadata.address).toBe('123 Main St, City, ST 12345');
       }
     });
   });

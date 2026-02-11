@@ -1,4 +1,3 @@
-import type { Representative } from './representative';
 import type { ApiSuccessResponse } from './api';
 
 /**
@@ -7,7 +6,7 @@ import type { ApiSuccessResponse } from './api';
 export type AppState = 
   | { status: 'idle' }
   | { status: 'loading' }
-  | { status: 'success'; data: Representative[]; metadata?: ApiSuccessResponse['metadata']; warnings?: string[] }
+  | { status: 'success'; data: ApiSuccessResponse }
   | { status: 'error'; message: string };
 
 /**
@@ -21,7 +20,7 @@ export const isLoadingState = (state: AppState): state is { status: 'loading' } 
   return state.status === 'loading';
 };
 
-export const isSuccessState = (state: AppState): state is { status: 'success'; data: Representative[]; metadata?: ApiSuccessResponse['metadata']; warnings?: string[] } => {
+export const isSuccessState = (state: AppState): state is { status: 'success'; data: ApiSuccessResponse } => {
   return state.status === 'success';
 };
 

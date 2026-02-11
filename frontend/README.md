@@ -82,12 +82,11 @@ src/
 ├── hooks/             # Custom React hooks
 │   └── useRepresentatives.ts
 ├── types/             # TypeScript type definitions
-│   ├── api.ts         # API response types
+│   ├── api.ts         # API response types (nested structure)
 │   ├── representative.ts
 │   ├── form.ts
 │   └── state.ts
 ├── utils/             # Utility functions
-│   ├── grouping.ts    # Group reps by government level
 │   └── errors.ts      # Error handling utilities
 ├── pages/             # Page components
 │   └── HomePage.tsx
@@ -97,6 +96,37 @@ tests/
 ├── unit/              # Component unit tests
 └── integration/       # Integration tests
 ```
+
+## API Response Structure
+
+The backend API returns representatives pre-grouped by government level with enhanced metadata:
+
+```typescript
+interface ApiSuccessResponse {
+  representatives: {
+    federal: Representative[];
+    state: Representative[];
+    local: Representative[];
+  };
+  metadata: {
+    address: string;              // Resolved address
+    coordinates?: {               // Geographic coordinates
+      latitude: number;
+      longitude: number;
+    };
+    total_count: number;          // Total representatives found
+    government_levels: string[];  // Levels with results
+    response_time_ms?: number;    // Backend processing time
+  };
+  warnings?: string[];            // Data limitation messages
+}
+```
+
+**Key Features**:
+- Representatives arrive pre-grouped (federal/state/local) - no client-side grouping needed
+- Metadata provides resolved address and total counts for display
+- Optional warnings array when data is incomplete
+- Coordinates support future map-based features
 
 ## Architecture
 

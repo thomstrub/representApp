@@ -27,18 +27,10 @@ export const useRepresentatives = () => {
         console.warn('API warnings:', apiResponse.warnings);
       }
 
-      // Flatten the nested structure into a single array for backward compatibility
-      const representatives = [
-        ...apiResponse.representatives.federal,
-        ...apiResponse.representatives.state,
-        ...apiResponse.representatives.local,
-      ];
-
+      // Store the complete API response with nested structure
       setAppState({ 
         status: 'success', 
-        data: representatives,
-        metadata: apiResponse.metadata,
-        warnings: apiResponse.warnings,
+        data: apiResponse,
       });
     } catch (error) {
       const message = error instanceof Error 
