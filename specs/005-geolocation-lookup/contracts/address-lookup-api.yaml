@@ -1,0 +1,405 @@
+openapi: 3.0.3
+info:
+  title: Represent App - Address Lookup API
+  description: |
+    API for looking up political representatives by address using geolocation.
+    
+    **Feature**: 005-geolocation-lookup
+    
+    **Flow**:
+    1. User provides street address via query parameter
+    2. Backend geocodes address to lat/lng using Google Maps Geocoding API
+    3. Backend queries OpenStates `/people.geo` endpoint with coordinates
+    4. Backend transforms and groups representatives by government level
+    5. Returns structured list of federal, state, and local representatives
+    
+    **Changes from Previous Version**:
+    - Internal implementation now uses Google Maps Geocoding + OpenStates geo endpoint
+    - Replaces deprecated Google Civic Information API
+    - Frontend contract remains unchanged (same request/response structure)
+  version: 2.0.0
+  contact:
+    name: Represent App Team
+    url: https://github.com/thomstrub/representApp
+
+servers:
+  - url: https://api.representapp.example.com
+    description: Production API
+  - url: https://dev-api.representapp.example.com
+    description: Development API
+
+paths:
+  /representatives:
+    get:
+      summary: Lookup representatives by address
+      description: |
+        Retrieves all federal, state, and local representatives for a given US address.
+        
+        **Process**:
+        1. Validates address format
+        2. Geocodes address to latitude/longitude (Google Maps)
+        3. Queries representative data by coordinates (OpenStates)
+        4. Groups results by government level
+        
+        **Timeout**: Total request timeout is 15 seconds (5s geocoding + 10s lookup)
+      operationId: lookupRepresentativesByAddress
+      tags:
+        - Representatives
+      parameters:
+        - name: address
+          in: query
+          description: |
+            US street address to lookup representatives for.
+            
+            **Examples**:
+            - "1600 Pennsylvania Avenue NW, Washington, DC"
+            - "1600 Amphitheatre Parkway, Mountain View, CA 94043"
+            - "Pike Place Market, Seattle, WA"
+            
+            **Format**: Full street address with city and state preferred for best accuracy.
+            Zip code only is supported but may return centroid-based results.
+          required: true
+          schema:
+            type: string
+            minLength: 5
+            maxLength: 200
+            example: "1600 Pennsylvania Avenue NW, Washington, DC"
+      
+      responses:
+        '200':
+          description: Successfully retrieved representatives
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RepresentativesResponse'
+              examples:
+                successfulLookup:
+                  summary: Representatives found for Seattle address
+                  value:
+                    representatives:
+                      federal:
+                        - id: "550e8400-e29b-41d4-a716-446655440000"
+                          name: "Adam Smith"
+                          position: "Representative"
+                          district: "WA-9"
+                          state: "United States"
+                          party: "Democratic"
+                          contact_info:
+                            email: "https://adamsmith.house.gov/contact/email-me"
+                            phone: null
+                            image: "https://unitedstates.github.io/images/congress/450x550/S000510.jpg"
+                          created_at: "2026-02-10T18:30:00Z"
+                          updated_at: "2026-02-10T18:30:00Z"
+                        - id: "660e8400-e29b-41d4-a716-446655440001"
+                          name: "Patty Murray"
+                          position: "Senator"
+                          district: "Washington"
+                          state: "United States"
+                          party: "Democratic"
+                          contact_info:
+                            email: "https://www.murray.senate.gov/write-to-patty/"
+                            phone: null
+                            image: "https://unitedstates.github.io/images/congress/450x550/M001111.jpg"
+                          created_at: "2026-02-10T18:30:00Z"
+                          updated_at: "2026-02-10T18:30:00Z"
+                      state:
+                        - id: "770e8400-e29b-41d4-a716-446655440002"
+                          name: "Rebecca Saldaña"
+                          position: "Senator"
+                          district: "37"
+                          state: "Washington"
+                          party: "Democratic"
+                          contact_info:
+                            email: "rebecca.saldana@leg.wa.gov"
+                            phone: null
+                            image: "https://leg.wa.gov/memberphoto/27290.jpg"
+                          created_at: "2026-02-10T18:30:00Z"
+                          updated_at: "2026-02-10T18:30:00Z"
+                      local: []
+                    metadata:
+                      address: "1600 Pennsylvania Avenue NW, Washington, DC 20500, USA"
+                      coordinates:
+                        latitude: 38.8976763
+                        longitude: -77.0365298
+                      total_count: 3
+                      government_levels:
+                        - "federal"
+                        - "state"
+                    warnings: []
+                
+                noRepresentativesFound:
+                  summary: Valid address but no representative data available
+                  value:
+                    representatives:
+                      federal: []
+                      state: []
+                      local: []
+                    metadata:
+                      address: "123 Remote Location Rd, Rural Area, WY 82001, USA"
+                      coordinates:
+                        latitude: 41.1400
+                        longitude: -104.8202
+                      total_count: 0
+                      government_levels: []
+                    warnings:
+                      - "No representative data available for this location"
+        
+        '400':
+          description: Invalid request - address missing or malformed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingAddress:
+                  summary: Address parameter missing
+                  value:
+                    error:
+                      code: "INVALID_REQUEST"
+                      message: "Address parameter is required"
+                      details: "Query parameter 'address' must be provided"
+                
+                invalidAddress:
+                  summary: Address could not be geocoded
+                  value:
+                    error:
+                      code: "INVALID_REQUEST"
+                      message: "Address could not be geocoded. Please verify the address."
+                      details: "Google Maps Geocoding API returned no results for the provided address"
+        
+        '503':
+          description: Service unavailable - external API errors or rate limits
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                geocodingTimeout:
+                  summary: Geocoding service timeout
+                  value:
+                    error:
+                      code: "EXTERNAL_SERVICE_ERROR"
+                      message: "Address lookup timed out. Please try again."
+                      details: "Google Maps Geocoding API request exceeded 5 second timeout"
+                
+                rateLimitExceeded:
+                  summary: API rate limit exceeded
+                  value:
+                    error:
+                      code: "RATE_LIMIT_EXCEEDED"
+                      message: "Too many requests. Please try again in a few moments."
+                      details: "OpenStates API rate limit exceeded. Please wait before retrying."
+                
+                externalServiceError:
+                  summary: External API unavailable
+                  value:
+                    error:
+                      code: "EXTERNAL_SERVICE_ERROR"
+                      message: "Representative lookup service temporarily unavailable."
+                      details: "OpenStates API returned HTTP 503 - Service Unavailable"
+        
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                internalError:
+                  summary: Unexpected server error
+                  value:
+                    error:
+                      code: "INTERNAL_ERROR"
+                      message: "An unexpected error occurred"
+                      details: "Internal server error - please contact support if this persists"
+
+components:
+  schemas:
+    RepresentativesResponse:
+      type: object
+      required:
+        - representatives
+        - metadata
+      properties:
+        representatives:
+          type: object
+          description: Representatives grouped by government level
+          required:
+            - federal
+            - state
+            - local
+          properties:
+            federal:
+              type: array
+              description: Federal level representatives (Senators, House Representatives)
+              items:
+                $ref: '#/components/schemas/Representative'
+            state:
+              type: array
+              description: State level representatives (State Senators, State Representatives)
+              items:
+                $ref: '#/components/schemas/Representative'
+            local:
+              type: array
+              description: Local level representatives (County, Municipal officials)
+              items:
+                $ref: '#/components/schemas/Representative'
+        
+        metadata:
+          type: object
+          description: Additional information about the lookup
+          required:
+            - address
+            - coordinates
+            - total_count
+          properties:
+            address:
+              type: string
+              description: Geocoded address (formatted by Google Maps)
+              example: "1600 Pennsylvania Avenue NW, Washington, DC 20500, USA"
+            coordinates:
+              type: object
+              description: Geographic coordinates for the address
+              required:
+                - latitude
+                - longitude
+              properties:
+                latitude:
+                  type: number
+                  format: float
+                  minimum: -90
+                  maximum: 90
+                  example: 38.8976763
+                longitude:
+                  type: number
+                  format: float
+                  minimum: -180
+                  maximum: 180
+                  example: -77.0365298
+            total_count:
+              type: integer
+              description: Total number of representatives found across all levels
+              minimum: 0
+              example: 6
+            government_levels:
+              type: array
+              description: List of government levels for which representatives were found
+              items:
+                type: string
+                enum: [federal, state, local]
+              example: ["federal", "state"]
+        
+        warnings:
+          type: array
+          description: Non-critical warnings (e.g., partial data, divisions with no representatives)
+          items:
+            type: string
+          example:
+            - "No local representative data available for this location"
+    
+    Representative:
+      type: object
+      description: A political representative
+      required:
+        - id
+        - name
+        - position
+        - state
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier (generated per request, not persisted)
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        name:
+          type: string
+          description: Full name of the representative
+          example: "Adam Smith"
+        position:
+          type: string
+          description: Official position/title
+          example: "Representative"
+        district:
+          type: string
+          nullable: true
+          description: District identifier (null for at-large positions)
+          example: "WA-9"
+        state:
+          type: string
+          description: State or jurisdiction name
+          example: "United States"
+        party:
+          type: string
+          nullable: true
+          description: Party affiliation
+          example: "Democratic"
+        contact_info:
+          type: object
+          nullable: true
+          description: Contact information for the representative
+          properties:
+            email:
+              type: string
+              nullable: true
+              description: Email address or contact form URL
+              example: "https://adamsmith.house.gov/contact/email-me"
+            phone:
+              type: string
+              nullable: true
+              description: Phone number (typically not available from OpenStates)
+              example: null
+            image:
+              type: string
+              format: uri
+              nullable: true
+              description: URL to representative's photo
+              example: "https://unitedstates.github.io/images/congress/450x550/S000510.jpg"
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when this record was created (current time)
+          example: "2026-02-10T18:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when this record was last updated (current time)
+          example: "2026-02-10T18:30:00Z"
+    
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: Error code for programmatic handling
+              enum:
+                - INVALID_REQUEST
+                - EXTERNAL_SERVICE_ERROR
+                - RATE_LIMIT_EXCEEDED
+                - INTERNAL_ERROR
+              example: "INVALID_REQUEST"
+            message:
+              type: string
+              description: Human-readable error message
+              example: "Address could not be geocoded. Please verify the address."
+            details:
+              type: string
+              description: Additional technical details about the error
+              example: "Google Maps Geocoding API returned no results for the provided address"
+
+tags:
+  - name: Representatives
+    description: Endpoints for looking up political representatives
+
+externalDocs:
+  description: Full feature specification and implementation details
+  url: https://github.com/thomstrub/representApp/tree/main/specs/005-geolocation-lookup

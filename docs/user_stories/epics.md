@@ -138,12 +138,12 @@ Please reach out to us if you have questions regarding this notice.
 
 #### User Stories
 
-**As a user**, I want a clean web interface where I can enter my zip code so that I can easily look up my representatives.
+**As a user**, I want a clean web interface where I can enter my address so that I can easily look up my representatives.
 
 **Acceptance Criteria**:
 - React application initialized with Create React App or Vite
 - Material UI (MUI) component library integrated
-- Zip code input form with validation
+- Address input form with validation
 - Submit button triggers API request
 - Loading state displayed during API call
 - Responsive design works on mobile, tablet, and desktop
