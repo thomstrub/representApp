@@ -16,6 +16,7 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+.env.production  # Contains actual API URL - use .env.production.template
 
 # Editor directories and files
 .vscode/*
