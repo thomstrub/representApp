@@ -106,8 +106,14 @@ class BackendStack(cdk.Stack):
             create_default_stage=True,
             cors_preflight=apigw2.CorsPreflightOptions(
                 allow_methods=[apigw2.CorsHttpMethod.ANY],
-                allow_origins=["*"],  # TODO: Configure appropriately for production
-                allow_headers=["*"]
+                allow_origins=[
+                    "http://localhost:5173",  # Local development
+                    "http://localhost:4173",  # Vite preview
+                    "https://d2x31oul4x7uo0.cloudfront.net"  # Production CloudFront
+                ],
+                allow_headers=["Content-Type", "X-Amz-Date", "Authorization", "X-Api-Key", "X-Amz-Security-Token"],
+                allow_credentials=False,
+                max_age=cdk.Duration.hours(1)
             )
         )
         

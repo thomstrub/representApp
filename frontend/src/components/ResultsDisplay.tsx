@@ -1,4 +1,4 @@
-import { Box, Typography, Grid, Alert } from '@mui/material';
+import { Box, Typography, Alert } from '@mui/material';
 import type { ApiSuccessResponse } from '../types/api';
 import { RepresentativeCard } from './RepresentativeCard';
 
@@ -57,13 +57,21 @@ export const ResultsDisplay = ({ data }: ResultsDisplayProps) => {
           <Typography variant="h5" component="h2" sx={{ mb: 2 }}>
             Federal Representatives
           </Typography>
-          <Grid container spacing={2}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: 'repeat(1, 1fr)',
+                sm: 'repeat(2, 1fr)',
+                md: 'repeat(3, 1fr)',
+              },
+              gap: 2,
+            }}
+          >
             {reps.federal.map((rep) => (
-              <Grid xs={12} sm={6} md={4} key={rep.id}>
-                <RepresentativeCard representative={rep} />
-              </Grid>
+              <RepresentativeCard key={rep.id} representative={rep} />
             ))}
-          </Grid>
+          </Box>
         </Box>
       )}
 
@@ -73,13 +81,21 @@ export const ResultsDisplay = ({ data }: ResultsDisplayProps) => {
           <Typography variant="h5" component="h2" sx={{ mb: 2 }}>
             State Representatives
           </Typography>
-          <Grid container spacing={2}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: 'repeat(1, 1fr)',
+                sm: 'repeat(2, 1fr)',
+                md: 'repeat(3, 1fr)',
+              },
+              gap: 2,
+            }}
+          >
             {reps.state.map((rep) => (
-              <Grid xs={12} sm={6} md={4} key={rep.id}>
-                <RepresentativeCard representative={rep} />
-              </Grid>
+              <RepresentativeCard key={rep.id} representative={rep} />
             ))}
-          </Grid>
+          </Box>
         </Box>
       )}
 
@@ -89,13 +105,21 @@ export const ResultsDisplay = ({ data }: ResultsDisplayProps) => {
           <Typography variant="h5" component="h2" sx={{ mb: 2 }}>
             Local Representatives
           </Typography>
-          <Grid container spacing={2}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: 'repeat(1, 1fr)',
+                sm: 'repeat(2, 1fr)',
+                md: 'repeat(3, 1fr)',
+              },
+              gap: 2,
+            }}
+          >
             {reps.local.map((rep) => (
-              <Grid xs={12} sm={6} md={4} key={rep.id}>
-                <RepresentativeCard representative={rep} />
-              </Grid>
+              <RepresentativeCard key={rep.id} representative={rep} />
             ))}
-          </Grid>
+          </Box>
         </Box>
       )}
     </Box>

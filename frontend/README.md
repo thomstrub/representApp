@@ -198,6 +198,68 @@ export default defineConfig([
   },
 ])
 ```
+## Production Deployment
+
+### Build for Production
+
+```bash
+# Create production build
+npm run build
+
+# Preview production build locally
+npm run preview
+```
+
+The build outputs to `dist/` directory with optimized assets:
+- Minified JavaScript bundles
+- Optimized CSS
+- Static assets with content-based hashing
+
+### Environment Configuration
+
+Production builds require the API endpoint configuration:
+
+```bash
+# Create production environment file
+cat > .env.production << EOF
+VITE_API_BASE_URL=https://pktpja4zxd.execute-api.us-west-1.amazonaws.com
+EOF
+
+# Rebuild with production config
+npm run build
+```
+
+### Deployed Environment
+
+**Production URL**: https://d2x31oul4x7uo0.cloudfront.net
+
+The application is deployed on AWS using:
+- **S3**: Static file hosting
+- **CloudFront**: Global CDN distribution
+- **API Gateway**: Backend API integration
+
+CORS is configured to allow the CloudFront origin for API requests.
+
+### Deployment Process
+
+Automated deployment via AWS CDK (see `infrastructure/` directory):
+
+```bash
+cd ../infrastructure
+
+# Deploy frontend stack
+cdk deploy RepresentAppFrontend-dev
+
+# Get deployment URLs
+cat frontend-outputs.json
+```
+
+The CDK stack will:
+1. Build the frontend application
+2. Upload assets to S3 bucket
+3. Create CloudFront distribution
+4. Configure caching policies
+5. Output the CloudFront URL
 
 You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
