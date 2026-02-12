@@ -34,9 +34,9 @@
 ### Tests for User Story 1 (Write FIRST - Red Phase)
 
 - [X] T004 [P] [US1] Create test file for API types in frontend/tests/unit/types/api.test.ts with tests for GovernmentLevelGroup, ApiSuccessResponse, Coordinates, and isApiErrorResponse type guard
-- [ ] T005 [P] [US1] Create tests for updated useRepresentatives hook in frontend/tests/unit/hooks/useRepresentatives.test.ts to verify parsing of nested representatives structure
-- [ ] T006 [P] [US1] Create tests for updated ResultsDisplay component in frontend/tests/unit/components/ResultsDisplay.test.tsx to verify display of pre-grouped data
-- [ ] T007 [P] [US1] Create integration tests for full flow in frontend/tests/integration/HomePage.test.tsx to verify end-to-end grouped display
+- [X] T005 [P] [US1] Create tests for updated useRepresentatives hook in frontend/tests/unit/hooks/useRepresentatives.test.ts to verify parsing of nested representatives structure
+- [X] T006 [P] [US1] Create tests for updated ResultsDisplay component in frontend/tests/unit/components/ResultsDisplay.test.tsx to verify display of pre-grouped data
+- [X] T007 [P] [US1] Create integration tests for full flow in frontend/tests/integration/HomePage.test.tsx to verify end-to-end grouped display
 
 ### Implementation for User Story 1 (Green Phase)
 
@@ -108,7 +108,7 @@
 - [X] T032 Run TypeScript type check to ensure no type errors: `npm run type-check` or verify in IDE
 - [X] T033 Run ESLint to ensure no lint errors: `npm run lint`
 - [X] T034 [P] Update type exports in frontend/src/types/api.ts to ensure all new types are properly exported
-- [ ] T035 Manual browser testing per quickstart.md validation checklist (address search, grouping, metadata, warnings, empty state)
+- [X] T035 Manual browser testing per quickstart.md validation checklist (address search, grouping, metadata, warnings, empty state)
 - [X] T036 Refactor ResultsDisplay component if needed (consider extracting metadata and warnings into separate components for better separation of concerns) - Component is clean and well-structured, no refactoring needed
 - [X] T037 [P] Update frontend README.md with notes about new API structure if needed - Already updated with nested structure documentation
 
